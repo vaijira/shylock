@@ -1,0 +1,25 @@
+[package]
+name = "shylock"
+version = "0.1.0"
+authors = ["Jorge Perez Burgos <vaijira@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+actix-files = "0.2"
+actix-rt = "1"
+actix-web = "2"
+chrono = { version = "0.4", features = ["serde"] }
+clap = "3.0.0-beta.1"
+env_logger = "0.7"
+lazy_static = "1.4.0"
+log = "0.4.0"
+radix_trie = "0.1.6"
+reqwest = { version = "0.10", features = ["blocking", "json"] }
+scraper = "0.12.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "0.2", features = ["full"] }
+zip = "0.5"
+rust_decimal = "1.7.0"
