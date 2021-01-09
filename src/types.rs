@@ -1,11 +1,13 @@
 use crate::concepts::BoeConcept;
 use chrono::NaiveDate;
+use geo_types::Point;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 pub(crate) const DEFAULT_DECIMALS: u32 = 2;
 const NOT_APPLICABLE: &str = "NA";
+const DEFAULT_COUNTRY: &str = "Spain";
 
 fn get_date(data: &HashMap<BoeConcept, String>, field: &BoeConcept) -> NaiveDate {
     if let Some(date_str) = data.get(field) {
@@ -18,18 +20,20 @@ fn get_date(data: &HashMap<BoeConcept, String>, field: &BoeConcept) -> NaiveDate
 
 fn get_vehicle_date(data: &HashMap<BoeConcept, String>, field: &BoeConcept) -> NaiveDate {
     if let Some(date_str) = data.get(field) {
-        let date_str = date_str.replace("/","-");
+        let date_str = date_str.replace("/", "-");
         match NaiveDate::parse_from_str(&date_str[..], "%Y-%m-%d") {
             Ok(date) => date,
-            Err(_) => {
-                match NaiveDate::parse_from_str(&date_str[..], "%d-%m-%Y") {
-                    Ok(date) => date,
-                    Err(error) => {
-                        log::warn!("Unable to parse date {}: {}", &date_str[..], error.to_string());
-                        NaiveDate::parse_from_str("01-01-2000", "%d-%m-%Y").unwrap()
-                    }
+            Err(_) => match NaiveDate::parse_from_str(&date_str[..], "%d-%m-%Y") {
+                Ok(date) => date,
+                Err(error) => {
+                    log::warn!(
+                        "Unable to parse date {}: {}",
+                        &date_str[..],
+                        error.to_string()
+                    );
+                    NaiveDate::parse_from_str("01-01-2000", "%d-%m-%Y").unwrap()
                 }
-            }
+            },
         }
     } else {
         NaiveDate::parse_from_str("01-01-2000", "%d-%m-%Y").unwrap()
@@ -82,12 +86,18 @@ fn get_lot_auction_kind(data: &HashMap<BoeConcept, String>) -> LotAuctionKind {
 /// Manager information to contact for information about the auction.
 #[derive(Debug, Eq, PartialEq, Deserialize, Serialize)]
 pub struct Management {
+    /// Management code
     pub code: String,
-    description: String,
-    address: String,
-    telephone: String,
-    fax: String,
-    email: String,
+    /// Description
+    pub description: String,
+    /// Contact address
+    pub address: String,
+    /// Contact telephone
+    pub telephone: String,
+    /// Conctact fax
+    pub fax: String,
+    /// Contact email
+    pub email: String,
 }
 
 impl Management {
@@ -157,20 +167,34 @@ pub enum LotAuctionKind {
 /// Auction struct
 #[derive(Debug, Eq, PartialEq, Deserialize, Serialize)]
 pub struct Auction {
+    /// Auction unique identifier.
     pub id: String,
-    kind: AuctionKind,
-    claim_quantity: Decimal,
+    /// Type of auction classified by entity.
+    pub kind: AuctionKind,
+    /// Quantity that is claimed by creditors.
+    pub claim_quantity: Decimal,
+    /// Number of lots.
     pub lots: u32,
+    /// Kind of lots (splitted or joined).
     pub lot_kind: LotAuctionKind,
-    management: Management,
-    value: Decimal,
-    appraisal: Decimal,
-    minimum_bid: Decimal,
-    start_date: NaiveDate,
-    end_date: NaiveDate,
-    notice: String,
-    bid_step: Decimal,
-    deposit: Decimal,
+    /// Auction management.
+    pub management: Management,
+    /// Auction value.
+    pub value: Decimal,
+    /// Valuation of the assets.
+    pub appraisal: Decimal,
+    /// Minimum bid for the auction.
+    pub minimum_bid: Decimal,
+    /// When the auction starts.
+    pub start_date: NaiveDate,
+    /// End date for auction.
+    pub end_date: NaiveDate,
+    /// Notice in official bulletin
+    pub notice: String,
+    /// Steps for each bid
+    pub bid_step: Decimal,
+    /// Deposit if someone wants to participate in the auction
+    pub deposit: Decimal,
 }
 
 impl Auction {
@@ -208,23 +232,41 @@ impl Auction {
 }
 
 /// Property can be any real state property: apartment, garage lot, industrial ...
-#[derive(Debug, Eq, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, PartialEq, Deserialize, Serialize)]
 pub struct Property {
-    address: String,
-    auction_id: String,
-    catastro_reference: String,
-    category: String,
-    charges: Decimal,
-    city: String,
-    description: String,
-    owner_status: String,
-    postal_code: String,
-    primary_residence: String,
-    province: String,
-    register_inscription: String,
-    subcategory: String,
-    visitable: String,
+    /// Address location.
+    pub address: String,
+    /// Unique identifier is linked to.
+    pub auction_id: String,
+    /// Catastro reference.
+    pub catastro_reference: String,
+    /// Category of the property (it should be real state).
+    pub category: String,
+    /// If the property has any previous charges.
+    pub charges: Decimal,
+    /// City the asset is in.
+    pub city: String,
+    /// Location coordinates.
+    pub coordinates: Option<Point<f64>>,
+    /// Description.
+    pub description: String,
+    /// Owner staus.
+    pub owner_status: String,
+    /// Postal code.
+    pub postal_code: String,
+    /// Indicates if it is primary residence.
+    pub primary_residence: String,
+    /// Province.
+    pub province: String,
+    /// Register inscription.
+    pub register_inscription: String,
+    /// Subcategory, usually: industrial, garage or apartment.
+    pub subcategory: String,
+    /// If someone can visit the property or not.
+    pub visitable: String,
 }
+
+impl Eq for Property {}
 
 impl Property {
     /// Create a new property asset.
@@ -234,6 +276,27 @@ impl Property {
         subcategory: &str,
         data: &HashMap<BoeConcept, String>,
     ) -> Property {
+        let city = data
+            .get(&BoeConcept::City)
+            .unwrap_or(&String::from(NOT_APPLICABLE))
+            .to_string();
+        let province = data
+            .get(&BoeConcept::Province)
+            .unwrap_or(&String::from(NOT_APPLICABLE))
+            .to_string();
+        let postal_code = data
+            .get(&BoeConcept::PostalCode)
+            .unwrap_or(&String::from(NOT_APPLICABLE))
+            .to_string();
+        let coordinates =
+            match crate::geosolver::resolve(&city, &province, DEFAULT_COUNTRY, &postal_code) {
+                Ok(coordinates) => coordinates,
+                Err(error) => {
+                    log::warn!("Unable to retrieve coordinates: {}", error);
+                    Some(Point::new(0.0, 0.0))
+                }
+            };
+
         Property {
             address: data
                 .get(&BoeConcept::Address)
@@ -246,10 +309,8 @@ impl Property {
                 .to_string(),
             category: category.to_string(),
             charges: get_decimal(data, &BoeConcept::Charges),
-            city: data
-                .get(&BoeConcept::City)
-                .unwrap_or(&String::from(NOT_APPLICABLE))
-                .to_string(),
+            city,
+            coordinates,
             description: data
                 .get(&BoeConcept::Description)
                 .unwrap_or(&String::from(NOT_APPLICABLE))
@@ -258,18 +319,12 @@ impl Property {
                 .get(&BoeConcept::OwnerStatus)
                 .unwrap_or(&String::from(NOT_APPLICABLE))
                 .to_string(),
-            postal_code: data
-                .get(&BoeConcept::PostalCode)
-                .unwrap_or(&String::from(NOT_APPLICABLE))
-                .to_string(),
+            postal_code,
             primary_residence: data
                 .get(&BoeConcept::PrimaryResidence)
                 .unwrap_or(&String::from(NOT_APPLICABLE))
                 .to_string(),
-            province: data
-                .get(&BoeConcept::Province)
-                .unwrap_or(&String::from(NOT_APPLICABLE))
-                .to_string(),
+            province,
             register_inscription: data
                 .get(&BoeConcept::RegisterInscription)
                 .unwrap_or(&String::from(NOT_APPLICABLE))
@@ -286,18 +341,30 @@ impl Property {
 /// Any kind of vehicle
 #[derive(Debug, Eq, PartialEq, Deserialize, Serialize)]
 pub struct Vehicle {
-    auction_id: String,
-    brand: String,
-    category: String,
-    charges: Decimal,
-    description: String,
-    frame_number: String, // Número de bastidor
-    licensed_date: NaiveDate,
-    license_plate: String,
-    localization: String,
-    model: String,
-    subcategory: String,
-    visitable: String,
+    /// Auction identifier is linked to.
+    pub auction_id: String,
+    /// Vehicle brand.
+    pub brand: String,
+    /// Category.
+    pub category: String,
+    /// If vehicle has previous charges.
+    pub charges: Decimal,
+    /// Description.
+    pub description: String,
+    /// Frame number.
+    pub frame_number: String, // Número de bastidor
+    /// Licensed date.
+    pub licensed_date: NaiveDate,
+    /// License plate number.
+    pub license_plate: String,
+    /// Localization.
+    pub localization: String,
+    /// Model.
+    pub model: String,
+    /// Subcategory, usually: car, motorbike or industrial.
+    pub subcategory: String,
+    /// Indicates if someone can inspect the vehicle.
+    pub visitable: String,
 }
 
 impl Vehicle {
@@ -349,14 +416,22 @@ impl Vehicle {
 /// Any asset that is not a vehicle or a property.
 #[derive(Debug, Eq, PartialEq, Deserialize, Serialize)]
 pub struct Other {
-    additional_information: String,
-    auction_id: String,
-    category: String,
-    charges: Decimal,
-    description: String,
-    judicial_title: String,
-    subcategory: String,
-    visitable: String,
+    /// Any asset additional information.
+    pub additional_information: String,
+    /// Auction is linked to.
+    pub auction_id: String,
+    /// Category.
+    pub category: String,
+    /// If the asset has any previous charges.
+    pub charges: Decimal,
+    /// Description.
+    pub description: String,
+    /// Type of judicial title if applies.
+    pub judicial_title: String,
+    /// Subcategory.
+    pub subcategory: String,
+    /// If someone can visit the asset if applies.
+    pub visitable: String,
 }
 
 impl Other {
@@ -660,6 +735,7 @@ mod tests {
             category: String::from("INMUEBLE"),
             charges: Decimal::new(0, DEFAULT_DECIMALS),
             city: String::from("VALLADOLID"),
+            coordinates: Some(Point::new(-4.728562, 41.6521328)),
             description: String::from(
                 "FINCA URBANA SITUADA EN VALLADOLID, CALLE MARIANO DE LOS COBOS NUM.90, BAJO-1º",
             ),
