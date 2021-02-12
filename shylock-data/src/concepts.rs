@@ -97,6 +97,9 @@ boe_auction_concepts! {
     /// Value of the asset according to official authorities.
     (Appraisal, "TASACIÓN");
 
+    /// Area of a property asset
+    (Area, "SUPERFICIE");
+
     /// Specify the kind of auction, so far:
     /// * AGENCIA TRIBUTARIA
     /// * RECAUDACIÓN TRIBUTARIA
