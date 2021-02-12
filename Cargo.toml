@@ -1,0 +1,8 @@
+[workspace]
+
+members = [
+    "shylock-data",
+    "shylock-parser",
+    "shylock-ui",
+]
+

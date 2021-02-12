@@ -1,2 +1,4 @@
 shylock*/target
 shylock*/Cargo.lock
+/target
+Cargo.lock
