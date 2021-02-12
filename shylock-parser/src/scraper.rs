@@ -1,8 +1,10 @@
 use crate::parser::*;
-use crate::types::{Asset, Auction, LotAuctionKind, Management};
+use geo_types::Point;
+use shylock_data::types::{Asset, Auction, LotAuctionKind, Management};
 use std::collections::HashMap;
 
 pub(crate) const BASE_BOE_URL: &str = "https://subastas.boe.es/";
+const DEFAULT_COUNTRY: &str = "Spain";
 
 static APP_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
 
@@ -33,6 +35,26 @@ fn get_auctions_links() -> Result<Vec<String>, Box<dyn std::error::Error>> {
     Ok(result)
 }
 
+fn update_asset_coordinates(asset: &mut Asset) -> () {
+    match asset {
+        Asset::Property(property) => {
+            property.coordinates = match crate::geosolver::resolve(
+                &property.city,
+                &property.province,
+                DEFAULT_COUNTRY,
+                &property.postal_code,
+            ) {
+                Ok(coordinates) => coordinates,
+                Err(error) => {
+                    log::warn!("Unable to retrieve coordinates: {}", error);
+                    Some(Point::new(0.0, 0.0))
+                }
+            };
+        }
+        _ => (),
+    }
+}
+
 fn process_auction_link(link: &str) -> Result<(Auction, Vec<Asset>), Box<dyn std::error::Error>> {
     let mut assets = Vec::new();
 
@@ -49,14 +71,17 @@ fn process_auction_link(link: &str) -> Result<(Auction, Vec<Asset>), Box<dyn std
     let asset_page = get_url(&asset_link)?;
     match auction.lot_kind {
         LotAuctionKind::NotApplicable => {
-            let asset = Asset::new(&auction.id, &parse_asset_auction_page(&asset_page)?);
+            let mut asset = Asset::new(&auction.id, &parse_asset_auction_page(&asset_page)?);
+            update_asset_coordinates(&mut asset);
+
             assets.push(asset);
         }
         LotAuctionKind::Joined | LotAuctionKind::Splitted => {
             let lot_links = parse_lot_auction_page_links(&asset_page)?;
             for (i, lot_link) in lot_links.iter().enumerate() {
                 let lot_page = get_url(&lot_link)?;
-                let asset = Asset::new(&auction.id, &parse_lot_auction_page(&lot_page, i + 1)?);
+                let mut asset = Asset::new(&auction.id, &parse_lot_auction_page(&lot_page, i + 1)?);
+                update_asset_coordinates(&mut asset);
                 assets.push(asset);
             }
         }

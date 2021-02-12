@@ -39,7 +39,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let output_dir = matches.value_of("OUTPUT_DIR").unwrap_or("/tmp");
     log::info!("Value for output dir: {}", output_dir);
 
-    let (auctions, assets) = shylock::scrape()?;
+    let (auctions, assets) = shylock_parser::scrape()?;
 
     let auction_json_file = format!("{}/{}", output_dir, AUCTION_DATA_JSON_FILE_NAME);
     dump_to_json_file(&auction_json_file, &auctions)?;

@@ -30,6 +30,7 @@ macro_rules! boe_auction_concepts {
             ($konst:ident, $name:expr);
         )+
     ) => {
+        /// Type of BOE concepts
         #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
         pub enum BoeConcept {
             $(

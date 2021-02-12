@@ -1,6 +1,6 @@
-use crate::concepts::BoeConcept;
 use crate::scraper::BASE_BOE_URL;
 use scraper::{Html, Selector};
+use shylock_data::concepts::BoeConcept;
 use std::collections::HashMap;
 
 fn parse_html_table(

@@ -7,7 +7,6 @@ use std::collections::HashMap;
 
 pub(crate) const DEFAULT_DECIMALS: u32 = 2;
 const NOT_APPLICABLE: &str = "NA";
-const DEFAULT_COUNTRY: &str = "Spain";
 
 fn get_date(data: &HashMap<BoeConcept, String>, field: &BoeConcept) -> NaiveDate {
     if let Some(date_str) = data.get(field) {
@@ -288,15 +287,6 @@ impl Property {
             .get(&BoeConcept::PostalCode)
             .unwrap_or(&String::from(NOT_APPLICABLE))
             .to_string();
-        let coordinates =
-            match crate::geosolver::resolve(&city, &province, DEFAULT_COUNTRY, &postal_code) {
-                Ok(coordinates) => coordinates,
-                Err(error) => {
-                    log::warn!("Unable to retrieve coordinates: {}", error);
-                    Some(Point::new(0.0, 0.0))
-                }
-            };
-
         Property {
             address: data
                 .get(&BoeConcept::Address)
@@ -310,7 +300,7 @@ impl Property {
             category: category.to_string(),
             charges: get_decimal(data, &BoeConcept::Charges),
             city,
-            coordinates,
+            coordinates: None,
             description: data
                 .get(&BoeConcept::Description)
                 .unwrap_or(&String::from(NOT_APPLICABLE))
