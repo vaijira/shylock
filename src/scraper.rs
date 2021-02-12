@@ -70,8 +70,9 @@ pub fn scrape() -> Result<(HashMap<String, Auction>, Vec<Asset>), Box<dyn std::e
     let mut total_assets = Vec::new();
     let mut total_auctions = HashMap::new();
     let auction_links = get_auctions_links()?;
+    let number_auctions = auction_links.len();
 
-    log::info!("Total auctions to process: {}", auction_links.len());
+    log::info!("Total auctions to process: {}", number_auctions);
     let mut auction_ok = 0;
     let mut auction_err = 0;
 
@@ -88,8 +89,9 @@ pub fn scrape() -> Result<(HashMap<String, Auction>, Vec<Asset>), Box<dyn std::e
             }
         }
         log::info!(
-            "Auctions processed: {}, Auctions errors: {}",
+            "Auctions processed: {}/{}, Auctions errors: {}",
             auction_ok + auction_err,
+            number_auctions,
             auction_err
         );
     }
