@@ -1,8 +1,8 @@
-use crate::routes::Home;
 use crate::{route::Route, ASSETS, AUCTIONS};
+use crate::{routes::Home, CITIES, MAX_AUCTION_VALUE, PROVINCES};
 
 use shylock_data::types::{Asset, Auction};
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 use yew::prelude::*;
 use yew_router::prelude::*;
 use yew_styles::spinner::{Spinner, SpinnerType};
@@ -48,7 +48,7 @@ impl Component for App {
                 log::debug!("Get assets");
                 self.link.send_future(async {
                     log::debug!("Request assets");
-                    let response = reqwasm::Request::get("/tmp/assets.json")
+                    let response = reqwasm::Request::get("/tmp/assets.min.json")
                         .send()
                         .await
                         .expect("Unable to request assets");
@@ -80,7 +80,7 @@ impl Component for App {
                 log::info!("Get auctions");
                 self.link.send_future(async {
                     log::debug!("Request auctions");
-                    let response = reqwasm::Request::get("/tmp/auctions.json")
+                    let response = reqwasm::Request::get("/tmp/auctions.min.json")
                         .send()
                         .await
                         .expect("Unable to request auctions");
@@ -105,6 +105,7 @@ impl Component for App {
                 }
                 log::info!("Loaded {} auctions", AUCTIONS.get().unwrap().len());
                 self.state.get_auctions_loaded = true;
+                set_global_info();
                 true
             }
         }
@@ -150,4 +151,51 @@ impl Component for App {
     fn rendered(&mut self, _first_render: bool) {}
 
     fn destroy(&mut self) {}
+}
+
+fn set_global_info() {
+    match MAX_AUCTION_VALUE.set(
+        AUCTIONS
+            .get()
+            .unwrap()
+            .iter()
+            .map(|(_, auction)| auction.value)
+            .max()
+            .unwrap(),
+    ) {
+        Err(_) => log::error!("Not able to set max auction value"),
+        _ => (),
+    };
+
+    match PROVINCES.set(
+        ASSETS
+            .get()
+            .unwrap()
+            .iter()
+            .filter_map(|asset| match asset {
+                Asset::Property(property) => Some(property.province.name()),
+                Asset::Vehicle(_) => None,
+                Asset::Other(_) => None,
+            })
+            .collect::<BTreeSet<&str>>(),
+    ) {
+        Err(_) => log::error!("Not able to set provinces"),
+        _ => (),
+    };
+
+    match CITIES.set(
+        ASSETS
+            .get()
+            .unwrap()
+            .iter()
+            .filter_map(|asset| match asset {
+                Asset::Property(property) => Some(&property.city[..]),
+                Asset::Vehicle(_) => None,
+                Asset::Other(_) => None,
+            })
+            .collect::<BTreeSet<&str>>(),
+    ) {
+        Err(_) => log::error!("Not able to set cities"),
+        _ => (),
+    };
 }

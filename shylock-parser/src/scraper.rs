@@ -40,7 +40,7 @@ fn update_asset_coordinates(asset: &mut Asset) -> () {
         Asset::Property(property) => {
             property.coordinates = match crate::geosolver::resolve(
                 &property.city,
-                &property.province,
+                property.province.name(),
                 DEFAULT_COUNTRY,
                 &property.postal_code,
             ) {

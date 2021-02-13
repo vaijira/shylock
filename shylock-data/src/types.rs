@@ -1,4 +1,6 @@
 use crate::concepts::BoeConcept;
+use crate::provinces::Province;
+
 use chrono::NaiveDate;
 use geo_types::Point;
 use rust_decimal::Decimal;
@@ -256,7 +258,7 @@ pub struct Property {
     /// Indicates if it is primary residence.
     pub primary_residence: String,
     /// Province.
-    pub province: String,
+    pub province: Province,
     /// Register inscription.
     pub register_inscription: String,
     /// Subcategory, usually: industrial, garage or apartment.
@@ -281,8 +283,9 @@ impl Property {
             .to_string();
         let province = data
             .get(&BoeConcept::Province)
-            .unwrap_or(&String::from(NOT_APPLICABLE))
-            .to_string();
+            .unwrap_or(&String::from("Unknown"))
+            .parse::<Province>()
+            .unwrap();
         let postal_code = data
             .get(&BoeConcept::PostalCode)
             .unwrap_or(&String::from(NOT_APPLICABLE))
@@ -725,14 +728,14 @@ mod tests {
             category: String::from("INMUEBLE"),
             charges: Decimal::new(0, DEFAULT_DECIMALS),
             city: String::from("VALLADOLID"),
-            coordinates: Some(Point::new(-4.728562, 41.6521328)),
+            coordinates: None,
             description: String::from(
                 "FINCA URBANA SITUADA EN VALLADOLID, CALLE MARIANO DE LOS COBOS NUM.90, BAJO-1º",
             ),
             owner_status: String::from("NO CONSTA"),
             postal_code: String::from("47014"),
             primary_residence: String::from("SÍ"),
-            province: String::from("VALLADOLID"),
+            province: Province::Valladolid,
             register_inscription: String::from("CONSTA EN EL EDICTO"),
             subcategory: String::from("VIVIENDA"),
             visitable: String::from("NO CONSTA"),

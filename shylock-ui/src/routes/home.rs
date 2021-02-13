@@ -1,5 +1,5 @@
 use crate::components::AssetView;
-use crate::ASSETS;
+use crate::{ASSETS, CITIES, PROVINCES};
 
 use log;
 use shylock_data::types::Asset;
@@ -19,6 +19,8 @@ const BLANK_OPTION: &str = "";
 
 struct State {
     asset_type: &'static str,
+    province: &'static str,
+    city: &'static str,
 }
 
 #[derive(Properties, Clone, PartialEq)]
@@ -31,7 +33,9 @@ pub struct Home {
 }
 
 pub enum Msg {
-    Select(String),
+    SelectAssetType(String),
+    SelectProvince(String),
+    SelectCity(String),
 }
 
 impl Component for Home {
@@ -43,6 +47,8 @@ impl Component for Home {
             props,
             state: State {
                 asset_type: BLANK_OPTION,
+                province: BLANK_OPTION,
+                city: BLANK_OPTION,
             },
             link,
         }
@@ -50,14 +56,25 @@ impl Component for Home {
 
     fn update(&mut self, message: Self::Message) -> ShouldRender {
         match message {
-            Msg::Select(value) => match &value[..] {
-                PROPERTY_OPTION => self.state.asset_type = PROPERTY_OPTION,
-                VEHICLE_OPTION => self.state.asset_type = VEHICLE_OPTION,
-                OTHER_OPTION => self.state.asset_type = OTHER_OPTION,
-                _ => self.state.asset_type = BLANK_OPTION,
-            },
+            Msg::SelectAssetType(value) => {
+                match &value[..] {
+                    PROPERTY_OPTION => self.state.asset_type = PROPERTY_OPTION,
+                    VEHICLE_OPTION => self.state.asset_type = VEHICLE_OPTION,
+                    OTHER_OPTION => self.state.asset_type = OTHER_OPTION,
+                    _ => self.state.asset_type = BLANK_OPTION,
+                }
+                log::debug!("Called update, asset type: {}", self.state.asset_type);
+            }
+            Msg::SelectProvince(value) => {
+                self.state.province = PROVINCES.get().unwrap().get(&value[..]).unwrap();
+                log::debug!("Called update, province: {}", self.state.province);
+            }
+            Msg::SelectCity(value) => {
+                self.state.city = CITIES.get().unwrap().get(&value[..]).unwrap();
+                log::debug!("Called update, city: {}", self.state.city);
+            }
         }
-        log::debug!("Called update, asset type: {}", self.state.asset_type);
+
         true
     }
 
@@ -72,17 +89,7 @@ impl Component for Home {
             .unwrap()
             .iter()
             .enumerate()
-            .filter(|(_, asset)| {
-                if self.state.asset_type == BLANK_OPTION {
-                    true
-                } else {
-                    match asset {
-                        Asset::Property(_) => self.state.asset_type == PROPERTY_OPTION,
-                        Asset::Vehicle(_) => self.state.asset_type == VEHICLE_OPTION,
-                        Asset::Other(_) => self.state.asset_type == OTHER_OPTION,
-                    }
-                }
-            })
+            .filter(|(_, asset)| self.filter_asset_type(asset))
             .map(|(i, asset)| {
                 html! {
                     <AssetView position=i asset=asset />
@@ -96,12 +103,32 @@ impl Component for Home {
             <Item layouts=vec!(ItemLayout::ItXs(2))>
             {get_asset_type_select(self)}
             </Item>
+            <Item layouts=vec!(ItemLayout::ItXs(2))>
+            {get_asset_province_select(self)}
+            </Item>
+            <Item layouts=vec!(ItemLayout::ItXs(2))>
+            {get_asset_city_select(self)}
+            </Item>
 
             </Container>
             <Container direction=Direction::Row wrap=Wrap::Wrap>
             {assets.drain(..).map(|x| get_items(x)).collect::<Html>()}
             </Container>
          </>
+        }
+    }
+}
+
+impl Home {
+    fn filter_asset_type(&self, asset: &&Asset) -> bool {
+        if self.state.asset_type == BLANK_OPTION {
+            true
+        } else {
+            match asset {
+                Asset::Property(_) => self.state.asset_type == PROPERTY_OPTION,
+                Asset::Vehicle(_) => self.state.asset_type == VEHICLE_OPTION,
+                Asset::Other(_) => self.state.asset_type == OTHER_OPTION,
+            }
         }
     }
 }
@@ -114,7 +141,7 @@ fn get_asset_type_select(page: &Home) -> Html {
         onchange_signal = page.link.callback(|e: ChangeData|
             match e {
             ChangeData::Select(element) => {
-               Msg::Select(element.value())
+               Msg::SelectAssetType(element.value())
                },
             _ => unreachable!(),
             }
@@ -126,6 +153,55 @@ fn get_asset_type_select(page: &Home) -> Html {
      <option value={VEHICLE_OPTION}>{"Vehículos"}</option>
      <option value={OTHER_OPTION}>{"Otros"}</option>
      </>
+    }/>
+
+    </FormGroup>
+    }
+}
+
+fn get_asset_province_select(page: &Home) -> Html {
+    html! {
+    <FormGroup>
+    <FormSelect
+        select_size=Size::Medium
+        onchange_signal = page.link.callback(|e: ChangeData|
+            match e {
+            ChangeData::Select(element) => {
+               Msg::SelectProvince(element.value())
+               },
+            _ => unreachable!(),
+            }
+           )
+    options=html!{
+     <>
+     <option value="">{"Todas las provincias"}</option>
+     { for PROVINCES.get().unwrap().iter().map(|province| html!{<option value={province}>{province}</option>}) }
+
+     </>
+    }/>
+
+    </FormGroup>
+    }
+}
+
+fn get_asset_city_select(page: &Home) -> Html {
+    html! {
+    <FormGroup>
+    <FormSelect
+        select_size=Size::Medium
+        onchange_signal = page.link.callback(|e: ChangeData|
+            match e {
+            ChangeData::Select(element) => {
+               Msg::SelectCity(element.value())
+               },
+            _ => unreachable!(),
+            }
+           )
+    options=html!{
+        <>
+        <option value="">{"Todas las ciudades"}</option>
+        { for CITIES.get().unwrap().iter().map(|city| html!{<option value={city}>{city}</option>}) }
+        </>
     }/>
 
     </FormGroup>

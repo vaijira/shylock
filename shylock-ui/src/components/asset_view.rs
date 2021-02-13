@@ -1,4 +1,7 @@
-use crate::Asset;
+use crate::AUCTIONS;
+
+use rust_decimal::Decimal;
+use shylock_data::types::Asset;
 
 use yew::prelude::*;
 use yewtil::NeqAssign;
@@ -34,22 +37,26 @@ impl Component for AssetView {
         match self.props.asset {
             Asset::Property(property) => html! {
                 <div key=self.props.position.to_string() class="asset_container">
-                <div class="asset_name">{"Bien inmueble"}</div>
-                <div class="asset_auction">{&property.auction_id}</div>
+                <div class="asset_name">{&property.description}</div>
+                <div class="asset_auction">{get_valuation(&property.auction_id)}</div>
                 </div>
             },
             Asset::Vehicle(vehicle) => html! {
                 <div key=self.props.position.to_string() class="asset_container">
-                <div class="asset_name">{"Vehículo"}</div>
-                <div class="asset_auction">{&vehicle.auction_id}</div>
+                <div class="asset_name">{&vehicle.description}</div>
+                <div class="asset_auction">{get_valuation(&vehicle.auction_id)}</div>
                 </div>
             },
             Asset::Other(other) => html! {
                 <div key=self.props.position.to_string() class="asset_container">
-                <div class="asset_name">{"Bien mueble"}</div>
-                <div class="asset_auction">{&other.auction_id}</div>
+                <div class="asset_name">{&other.description}</div>
+                <div class="asset_auction">{get_valuation(&other.auction_id)}</div>
                 </div>
             },
         }
     }
+}
+
+fn get_valuation(auction_id: &str) -> &Decimal {
+    &AUCTIONS.get().unwrap().get(auction_id).unwrap().value
 }

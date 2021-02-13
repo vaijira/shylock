@@ -5,6 +5,9 @@
 /// Auction concepts
 pub mod concepts;
 
+/// Spain provinces
+pub mod provinces;
+
 /// Auction types
 pub mod types;
 
