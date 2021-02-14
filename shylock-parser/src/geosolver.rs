@@ -1,47 +1,76 @@
-use crate::scraper::get_url;
 use geo_types::Point;
 use std::{thread, time};
 
-const NOMINATIN_OSM_URL: &str = "http://nominatim.openstreetmap.org/search.php";
+use crate::scraper::APP_USER_AGENT;
 
-pub(crate) fn resolve(
-    city: &str,
-    province: &str,
-    country: &str,
-    postal_code: &str,
-) -> Result<Option<Point<f64>>, Box<dyn std::error::Error>> {
-    let address = format!(
-        "{}?city={}&state={}&country={}&postalcode={}&countrycodes=es&format=jsonv2",
-        NOMINATIN_OSM_URL, city, province, country, postal_code
-    );
+const NOMINATIN_OSM_URL: &str = "https://nominatim.openstreetmap.org/search.php";
 
-    // Openstreet map is a free service sleep 1 second to not abuse.
-    let one_second = time::Duration::from_secs(1);
-    thread::sleep(one_second);
-
-    log::debug!("nominatin url: {}", address);
-    let body = get_url(&address)?;
-    let json: serde_json::Value = serde_json::from_str(&body)?;
-
-    log::debug!("json: {}", json);
-    let x = json[0]
-        .get("lon")
-        .ok_or("no lon field in json")?
-        .as_str()
-        .ok_or("lon is not a str")?
-        .parse::<f64>()?;
-
-    let y = json[0]
-        .get("lat")
-        .ok_or("no lat field in json")?
-        .as_str()
-        .ok_or("lat is not a str")?
-        .parse::<f64>()?;
-
-    log::debug!("Coordinates x: {}, y: {}", x, y);
-    Ok(Some(Point::new(x, y)))
+pub(crate) struct GeoSolver {
+    client: reqwest::blocking::Client,
 }
 
+impl GeoSolver {
+    pub(crate) fn new() -> Self {
+        GeoSolver {
+            client: reqwest::blocking::Client::builder()
+                .connect_timeout(std::time::Duration::from_secs(10))
+                .timeout(std::time::Duration::from_secs(10))
+                .user_agent(APP_USER_AGENT)
+                .tcp_nodelay(true)
+                .tcp_keepalive(std::time::Duration::from_secs(60))
+                .cookie_store(true)
+                .pool_max_idle_per_host(10)
+                .gzip(true)
+                .build()
+                .unwrap(),
+        }
+    }
+
+    fn get_url(&self, target: &str) -> Result<String, Box<dyn std::error::Error>> {
+        let body = self.client.get(target).send()?.error_for_status()?.text()?;
+
+        Ok(body)
+    }
+
+    pub(crate) fn resolve(
+        &self,
+        city: &str,
+        province: &str,
+        country: &str,
+        postal_code: &str,
+    ) -> Result<Option<Point<f64>>, Box<dyn std::error::Error>> {
+        let address = format!(
+            "{}?city={}&state={}&country={}&postalcode={}&countrycodes=es&format=jsonv2",
+            NOMINATIN_OSM_URL, city, province, country, postal_code
+        );
+
+        // Openstreet map is a free service sleep 1 second to not abuse.
+        let one_second = time::Duration::from_secs(1);
+        thread::sleep(one_second);
+
+        log::debug!("nominatin url: {}", address);
+        let body = self.get_url(&address)?;
+        let json: serde_json::Value = serde_json::from_str(&body)?;
+
+        log::debug!("json: {}", json);
+        let x = json[0]
+            .get("lon")
+            .ok_or("no lon field in json")?
+            .as_str()
+            .ok_or("lon is not a str")?
+            .parse::<f64>()?;
+
+        let y = json[0]
+            .get("lat")
+            .ok_or("no lat field in json")?
+            .as_str()
+            .ok_or("lat is not a str")?
+            .parse::<f64>()?;
+
+        log::debug!("Coordinates x: {}, y: {}", x, y);
+        Ok(Some(Point::new(x, y)))
+    }
+}
 #[cfg(test)]
 mod tests {
 

@@ -30,11 +30,11 @@ macro_rules! auction_provinces {
     (
         $(
             $(#[$docs:meta])*
-            ($konst:ident, $name:expr);
+            ($konst:ident, $name:expr, $display:expr);
         )+
     ) => {
         /// Type of provinces
-        #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Deserialize, Serialize)]
+        #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize)]
         pub enum Province {
             $(
                 $(#[$docs])*
@@ -52,7 +52,7 @@ macro_rules! auction_provinces {
                    .chars()
                    .map(|x| match x {
                         'Á' => 'A',
-                        'É' => 'É',
+                        'É' => 'E',
                         'Í' => 'I',
                         'Ó' => 'O',
                         'Ú' => 'U',
@@ -79,22 +79,22 @@ macro_rules! auction_provinces {
             let mut provinces: HashMap<Province, &str> = HashMap::new();
 
             $(
-            provinces.insert(Province::$konst, $name);
+            provinces.insert(Province::$konst, $display);
             )+
 
             provinces
         });
 
         #[cfg(test)]
-        const TEST_PROVINCES: &'static [(Province, &'static str)] = &[
+        const TEST_PROVINCES: &'static [(Province, &'static str, &'static str)] = &[
             $(
-            (Province::$konst, $name),
+            (Province::$konst, $name, $display),
             )+
         ];
 
         #[test]
         fn test_parse_province() {
-            for &(std, name) in TEST_PROVINCES {
+            for &(std, name, _) in TEST_PROVINCES {
                 // Test upper case
                 assert_eq!(name.parse::<Province>().unwrap(), std);
 
@@ -105,8 +105,8 @@ macro_rules! auction_provinces {
 
         #[test]
         fn test_province_name() {
-            for &(std, name) in TEST_PROVINCES {
-                assert_eq!(std.name(), name);
+            for &(std, _, display) in TEST_PROVINCES {
+                assert_eq!(std.name(), display);
             }
         }
 
@@ -120,161 +120,164 @@ macro_rules! auction_provinces {
 
 auction_provinces! {
     /// A Coruña province
-    (ACorunia, "ACORUÑA");
+    (ACorunia, "ACORUÑA", "A Coruña");
 
     /// Alava province
-    (Alava, "ALAVA");
+    (Alava, "ALAVA", "Álava");
 
     /// Albacete province
-    (Albacete, "ALBACETE");
+    (Albacete, "ALBACETE", "Albacete");
 
     /// Alicante province
-    (Alicante, "ALICANTE");
+    (Alicante, "ALICANTE", "Alicante");
 
     /// Almería province
-    (Almeria, "ALMERIA");
+    (Almeria, "ALMERIA", "Almería");
 
     /// Asturias
-    (Asturias, "ASTURIAS");
+    (Asturias, "ASTURIAS", "Asturias");
 
     /// Ávila province
-    (Avila, "AVILA");
+    (Avila, "AVILA", "Ávila");
 
     /// Badajoz province
-    (Badajoz, "BADAJOZ");
+    (Badajoz, "BADAJOZ", "Badajoz");
 
     /// Baleares province
-    (Baleares, "BALEARES");
+    (Baleares, "BALEARES", "Baleares");
 
     /// Barcelona province
-    (Barcelona, "BARCELONA");
+    (Barcelona, "BARCELONA", "Barcelona");
 
     /// Burgos province
-    (Burgos, "BURGOS");
+    (Burgos, "BURGOS", "Burgos");
 
     /// Cáceres province
-    (Caceres, "CACERES");
+    (Caceres, "CACERES", "Cáceres");
 
     /// Cádiz province
-    (Cadiz, "CADIZ");
+    (Cadiz, "CADIZ", "Cádiz");
 
     /// Cantabria province
-    (Cantabria, "CANTABRIA");
+    (Cantabria, "CANTABRIA", "Cantabria");
 
     /// Castellón province
-    (Castellon, "CASTELLON");
+    (Castellon, "CASTELLON", "Castellón");
 
     /// Ciudad Real province
-    (CiudadReal, "CIUDADREAL");
+    (CiudadReal, "CIUDADREAL", "Ciudad Real");
 
     /// Córdoba province
-    (Cordoba, "CORDOBA");
+    (Cordoba, "CORDOBA", "Córdoba");
 
     /// Cuenca province
-    (Cuenca, "CUENCA");
+    (Cuenca, "CUENCA", "Cuenca");
 
     /// Girona province
-    (Gerona, "GERONA");
+    (Gerona, "GERONA", "Gerona");
 
     /// Granada province
-    (Granada, "GRANADA");
+    (Granada, "GRANADA", "Granada");
 
     /// Guadalajara province
-    (Guadalajara, "GUADALAJARA");
+    (Guadalajara, "GUADALAJARA", "Guadalajara");
 
     /// Guipúzcoa province
-    (Guipuzcoa, "GUIPUZCOA");
+    (Guipuzcoa, "GUIPUZCOA", "Guipúzcoa");
 
     /// Huelva province
-    (Huelva, "HUELVA");
+    (Huelva, "HUELVA", "Huelva");
 
     /// Huesca province
-    (Huesca, "HUESCA");
+    (Huesca, "HUESCA", "Huesca");
 
     /// Jaén province
-    (Jaen, "JAEN");
+    (Jaen, "JAEN", "Jaén");
 
     /// León province
-    (Leon, "LEON");
+    (Leon, "LEON", "León");
 
     /// Lleida province
-    (Lerida, "LERIDA");
+    (Lerida, "LERIDA", "Lérida");
 
     /// La Rioja province
-    (LaRioja, "LARIOJA");
+    (LaRioja, "LARIOJA", "La Rioja");
 
     /// Lugo province
-    (Lugo, "LUGO");
+    (Lugo, "LUGO", "Lugo");
 
     /// Madrid province
-    (Madrid, "MADRID");
+    (Madrid, "MADRID", "Madrid");
 
     /// Málaga province
-    (Malaga, "MALAGA");
+    (Malaga, "MALAGA", "Málaga");
 
     /// Murcia province
-    (Murcia, "MURCIA");
+    (Murcia, "MURCIA", "Murcia");
 
     /// Navarra province
-    (Navarra, "NAVARRA");
+    (Navarra, "NAVARRA", "Navarra");
 
     /// Ourense province
-    (Orense, "ORENSE");
+    (Orense, "ORENSE", "Orense");
 
     /// Palencia province
-    (Palencia, "PALENCIA");
+    (Palencia, "PALENCIA", "Palencia");
 
     /// Las Palmas province
-    (LasPalmas, "LASPALMAS");
+    (LasPalmas, "LASPALMAS", "Las Palmas");
 
     /// Pontevedra province
-    (Pontevedra, "PONTEVEDRA");
+    (Pontevedra, "PONTEVEDRA", "Pontevedra");
 
     /// Salamanca province
-    (Salamanca, "SALAMANCA");
+    (Salamanca, "SALAMANCA", "Salamanca");
 
     /// Santa Cruz de Tenerife province
-    (SantaCruzDeTenerife, "SANTACRUZDETENERIFE");
+    (SantaCruzDeTenerife, "SANTACRUZDETENERIFE", "Santa Cruz de Tenerife");
 
     /// Segovia province
-    (Segovia, "SEGOVIA");
+    (Segovia, "SEGOVIA", "Segovia");
 
     /// Sevilla province
-    (Sevilla, "SEVILLA");
+    (Sevilla, "SEVILLA", "Sevilla");
 
     /// Soria province
-    (Soria, "SORIA");
+    (Soria, "SORIA", "Soria");
 
     /// Tarragona province
-    (Tarragona, "TARRAGONA");
+    (Tarragona, "TARRAGONA", "Tarragona");
 
     /// Teruel province
-    (Teruel, "TERUEL");
+    (Teruel, "TERUEL", "Teruel");
 
     ///  Toledo province
-    (Toledo, "TOLEDO");
+    (Toledo, "TOLEDO", "Toledo");
 
     /// Valencia province
-    (Valencia, "VALENCIA");
+    (Valencia, "VALENCIA", "Valencia");
 
     /// Valladolid province
-    (Valladolid, "VALLADOLID");
+    (Valladolid, "VALLADOLID", "Valladolid");
 
     /// Vizcaya province
-    (Vizcaya, "VIZCAYA");
+    (Vizcaya, "VIZCAYA", "Vizcaya");
 
     /// Zamora province
-    (Zamora, "ZAMORA");
+    (Zamora, "ZAMORA", "Zamora");
 
     /// Zaragoza province
-    (Zaragoza, "ZARAGOZA");
+    (Zaragoza, "ZARAGOZA", "Zaragoza");
 
     /// Ceuta autonomous city
-    (Ceuta, "CEUTA");
+    (Ceuta, "CEUTA", "Ceuta");
 
     /// Melilla autonomous city
-    (Melilla, "MELILLA");
+    (Melilla, "MELILLA", "Melilla");
 
     /// Unkown
-    (Unknown, "UNKNOWN");
+    (Unknown, "UNKNOWN", "Desconocido");
+
+    /// All
+    (All, "ALL", "All");
 }

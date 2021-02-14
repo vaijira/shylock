@@ -2,6 +2,7 @@ use crate::components::AssetView;
 use crate::{ASSETS, CITIES, PROVINCES};
 
 use log;
+use shylock_data::provinces::Province;
 use shylock_data::types::Asset;
 use yew::prelude::*;
 use yew_styles::forms::{form_group::FormGroup, form_select::FormSelect};
@@ -19,7 +20,7 @@ const BLANK_OPTION: &str = "";
 
 struct State {
     asset_type: &'static str,
-    province: &'static str,
+    province: Province,
     city: &'static str,
 }
 
@@ -34,7 +35,7 @@ pub struct Home {
 
 pub enum Msg {
     SelectAssetType(String),
-    SelectProvince(String),
+    SelectProvince(Province),
     SelectCity(String),
 }
 
@@ -47,7 +48,7 @@ impl Component for Home {
             props,
             state: State {
                 asset_type: BLANK_OPTION,
-                province: BLANK_OPTION,
+                province: Province::All,
                 city: BLANK_OPTION,
             },
             link,
@@ -59,18 +60,36 @@ impl Component for Home {
             Msg::SelectAssetType(value) => {
                 match &value[..] {
                     PROPERTY_OPTION => self.state.asset_type = PROPERTY_OPTION,
-                    VEHICLE_OPTION => self.state.asset_type = VEHICLE_OPTION,
-                    OTHER_OPTION => self.state.asset_type = OTHER_OPTION,
+                    VEHICLE_OPTION => {
+                        self.state.asset_type = VEHICLE_OPTION;
+                        self.state.province = Province::All;
+                        self.state.city = BLANK_OPTION;
+                    }
+                    OTHER_OPTION => {
+                        self.state.asset_type = OTHER_OPTION;
+                        self.state.province = Province::All;
+                        self.state.city = BLANK_OPTION;
+                    }
                     _ => self.state.asset_type = BLANK_OPTION,
                 }
                 log::debug!("Called update, asset type: {}", self.state.asset_type);
             }
             Msg::SelectProvince(value) => {
-                self.state.province = PROVINCES.get().unwrap().get(&value[..]).unwrap();
-                log::debug!("Called update, province: {}", self.state.province);
+                if value == Province::All {
+                    self.state.province = Province::All;
+                } else {
+                    self.state.province = *PROVINCES.get().unwrap().get(&value).unwrap();
+                    self.state.asset_type = PROPERTY_OPTION;
+                }
+                log::debug!("Called update, province: {}", self.state.province.name());
             }
             Msg::SelectCity(value) => {
-                self.state.city = CITIES.get().unwrap().get(&value[..]).unwrap();
+                if &value == BLANK_OPTION {
+                    self.state.city = BLANK_OPTION;
+                } else {
+                    self.state.city = CITIES.get().unwrap().get(&value[..]).unwrap();
+                    self.state.asset_type = PROPERTY_OPTION;
+                }
                 log::debug!("Called update, city: {}", self.state.city);
             }
         }
@@ -125,7 +144,12 @@ impl Home {
             true
         } else {
             match asset {
-                Asset::Property(_) => self.state.asset_type == PROPERTY_OPTION,
+                Asset::Property(property) => {
+                    self.state.asset_type == PROPERTY_OPTION
+                        && (self.state.province == Province::All
+                            || self.state.province == property.province)
+                        && (self.state.city == BLANK_OPTION || self.state.city == property.city)
+                }
                 Asset::Vehicle(_) => self.state.asset_type == VEHICLE_OPTION,
                 Asset::Other(_) => self.state.asset_type == OTHER_OPTION,
             }
@@ -148,10 +172,10 @@ fn get_asset_type_select(page: &Home) -> Html {
            )
     options=html!{
      <>
-     <option value="">{"Todo tipo de bienes"}</option>
-     <option value={PROPERTY_OPTION}>{"Inmuebles"}</option>
-     <option value={VEHICLE_OPTION}>{"Vehículos"}</option>
-     <option value={OTHER_OPTION}>{"Otros"}</option>
+     <option selected={page.state.asset_type == BLANK_OPTION} value="">{"Todo tipo de bienes"}</option>
+     <option selected={page.state.asset_type == PROPERTY_OPTION} value={PROPERTY_OPTION}>{"Inmuebles"}</option>
+     <option selected={page.state.asset_type == VEHICLE_OPTION} value={VEHICLE_OPTION}>{"Vehículos"}</option>
+     <option selected={page.state.asset_type == OTHER_OPTION} value={OTHER_OPTION}>{"Otros"}</option>
      </>
     }/>
 
@@ -167,15 +191,19 @@ fn get_asset_province_select(page: &Home) -> Html {
         onchange_signal = page.link.callback(|e: ChangeData|
             match e {
             ChangeData::Select(element) => {
-               Msg::SelectProvince(element.value())
+               Msg::SelectProvince(element.value().parse::<Province>().unwrap_or(Province::All))
                },
             _ => unreachable!(),
             }
            )
     options=html!{
      <>
-     <option value="">{"Todas las provincias"}</option>
-     { for PROVINCES.get().unwrap().iter().map(|province| html!{<option value={province}>{province}</option>}) }
+     <option selected={page.state.province == Province::All} value={Province::All.name()}>{"Todas las provincias"}</option>
+     {
+         for PROVINCES.get().unwrap().iter().map(|province| html!{
+         <option selected={page.state.province == *province} value={province.name()}>{province.name()}</option>
+         })
+     }
 
      </>
     }/>
@@ -199,8 +227,12 @@ fn get_asset_city_select(page: &Home) -> Html {
            )
     options=html!{
         <>
-        <option value="">{"Todas las ciudades"}</option>
-        { for CITIES.get().unwrap().iter().map(|city| html!{<option value={city}>{city}</option>}) }
+        <option selected={page.state.city == BLANK_OPTION} value="">{"Todas las ciudades"}</option>
+        {
+            for CITIES.get().unwrap().iter().map(|city| html!{
+                <option selected={&page.state.city == city} value={city}>{city}</option>
+            })
+        }
         </>
     }/>
 

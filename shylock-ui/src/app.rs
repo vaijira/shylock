@@ -1,6 +1,7 @@
 use crate::{route::Route, ASSETS, AUCTIONS};
 use crate::{routes::Home, CITIES, MAX_AUCTION_VALUE, PROVINCES};
 
+use shylock_data::provinces::Province;
 use shylock_data::types::{Asset, Auction};
 use std::collections::{BTreeSet, HashMap};
 use yew::prelude::*;
@@ -48,7 +49,7 @@ impl Component for App {
                 log::debug!("Get assets");
                 self.link.send_future(async {
                     log::debug!("Request assets");
-                    let response = reqwasm::Request::get("/tmp/assets.min.json")
+                    let response = reqwasm::Request::get("tmp/assets.min.json")
                         .send()
                         .await
                         .expect("Unable to request assets");
@@ -80,7 +81,7 @@ impl Component for App {
                 log::info!("Get auctions");
                 self.link.send_future(async {
                     log::debug!("Request auctions");
-                    let response = reqwasm::Request::get("/tmp/auctions.min.json")
+                    let response = reqwasm::Request::get("tmp/auctions.min.json")
                         .send()
                         .await
                         .expect("Unable to request auctions");
@@ -173,11 +174,11 @@ fn set_global_info() {
             .unwrap()
             .iter()
             .filter_map(|asset| match asset {
-                Asset::Property(property) => Some(property.province.name()),
+                Asset::Property(property) => Some(property.province),
                 Asset::Vehicle(_) => None,
                 Asset::Other(_) => None,
             })
-            .collect::<BTreeSet<&str>>(),
+            .collect::<BTreeSet<Province>>(),
     ) {
         Err(_) => log::error!("Not able to set provinces"),
         _ => (),
