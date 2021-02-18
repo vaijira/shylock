@@ -1,5 +1,11 @@
-use crate::{route::{AppRouter, FragmentOnlyRoute}, ASSETS, AUCTIONS};
-use crate::{routes::{Home, PropertyPage}, CITIES, MAX_AUCTION_VALUE, PROVINCES};
+use crate::{
+    route::{AppRouter, FragmentOnlyRoute},
+    ASSETS, AUCTIONS,
+};
+use crate::{
+    routes::{Home, PropertyPage},
+    CITIES, MAX_AUCTION_VALUE, PROVINCES,
+};
 
 use shylock_data::provinces::Province;
 use shylock_data::types::{Asset, Auction};
@@ -48,7 +54,16 @@ impl Component for App {
     type Properties = ();
 
     fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
-        log::info!("base_uri: {}", web_sys::window().unwrap().document().unwrap().base_uri().unwrap().unwrap());
+        log::info!(
+            "base_uri: {}",
+            web_sys::window()
+                .unwrap()
+                .document()
+                .unwrap()
+                .base_uri()
+                .unwrap()
+                .unwrap()
+        );
         link.send_message(Msg::GetAssets);
         Self {
             state: State {
@@ -134,7 +149,7 @@ impl Component for App {
                     self.state.selected_menu = selection;
                     true
                 }
-            },
+            }
         }
     }
 
@@ -144,10 +159,11 @@ impl Component for App {
 
     fn view(&self) -> Html {
         if self.state.get_assets_loaded && self.state.get_auctions_loaded {
-            let render = Router::render(|switch: FragmentOnlyRoute<AppRouter>| match switch.inner {
-                AppRouter::Properties => html! { <PropertyPage/> },
-                AppRouter::HomePage => html! { <Home/> },
-            });
+            let render =
+                Router::render(|switch: FragmentOnlyRoute<AppRouter>| match switch.inner {
+                    AppRouter::Properties => html! { <PropertyPage/> },
+                    AppRouter::HomePage => html! { <Home/> },
+                });
 
             html! {
                 <>

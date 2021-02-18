@@ -25,7 +25,8 @@ impl<I: Switch> Switch for FragmentOnlyRoute<I> {
         let part = match part.find('#') {
             Some(i) => &part[i..],
             None => "",
-        }.to_string();
+        }
+        .to_string();
         let (slef, outstate) = I::from_route_part(part, state);
         (slef.map(|s| s.into()), outstate)
     }
@@ -42,4 +43,3 @@ impl<I: Switch> From<I> for FragmentOnlyRoute<I> {
         Self { inner }
     }
 }
-
