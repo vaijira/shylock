@@ -1,19 +1,33 @@
-use crate::{route::Route, ASSETS, AUCTIONS};
-use crate::{routes::Home, CITIES, MAX_AUCTION_VALUE, PROVINCES};
+use crate::{route::{AppRouter, FragmentOnlyRoute}, ASSETS, AUCTIONS};
+use crate::{routes::{Home, PropertyPage}, CITIES, MAX_AUCTION_VALUE, PROVINCES};
 
 use shylock_data::provinces::Province;
 use shylock_data::types::{Asset, Auction};
 use std::collections::{BTreeSet, HashMap};
-use yew::prelude::*;
-use yew_router::prelude::*;
+use yew::{prelude::*, web_sys};
+use yew_router::{prelude::*, route::Route, switch::Permissive, Switch};
 use yew_styles::spinner::{Spinner, SpinnerType};
-use yew_styles::styles::{Palette, Size};
 use yew_styles::text::{Text, TextType};
+use yew_styles::{
+    layouts::container::{JustifyContent, Mode},
+    navbar::{
+        navbar_component::{Fixed, Navbar},
+        navbar_container::NavbarContainer,
+        navbar_item::NavbarItem,
+    },
+    styles::{Palette, Size, Style},
+};
 use yewtil::future::LinkFuture;
+
+const HOME_MENU: &str = "inicio";
+const PROPERTY_MENU: &str = "inmueble";
+const VEHICLE_MENU: &str = "vehiculo";
+const OTHER_MENU: &str = "otro";
 
 struct State {
     get_assets_loaded: bool,
     get_auctions_loaded: bool,
+    selected_menu: &'static str,
 }
 
 pub struct App {
@@ -26,6 +40,7 @@ pub enum Msg {
     GotAssets(Vec<Asset>),
     GetAuctions,
     GotAuctions(HashMap<String, Auction>),
+    ChangeMenu(&'static str),
 }
 
 impl Component for App {
@@ -33,11 +48,13 @@ impl Component for App {
     type Properties = ();
 
     fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
+        log::info!("base_uri: {}", web_sys::window().unwrap().document().unwrap().base_uri().unwrap().unwrap());
         link.send_message(Msg::GetAssets);
         Self {
             state: State {
                 get_assets_loaded: false,
                 get_auctions_loaded: false,
+                selected_menu: HOME_MENU,
             },
             link,
         }
@@ -109,6 +126,15 @@ impl Component for App {
                 set_global_info();
                 true
             }
+            Msg::ChangeMenu(selection) => {
+                log::debug!("Change Menu selection: {}", selection);
+                if self.state.selected_menu == selection {
+                    false
+                } else {
+                    self.state.selected_menu = selection;
+                    true
+                }
+            },
         }
     }
 
@@ -118,12 +144,16 @@ impl Component for App {
 
     fn view(&self) -> Html {
         if self.state.get_assets_loaded && self.state.get_auctions_loaded {
-            let render = Router::render(|switch: Route| match switch {
-                Route::HomePage => html! {<Home/>},
+            let render = Router::render(|switch: FragmentOnlyRoute<AppRouter>| match switch.inner {
+                AppRouter::Properties => html! { <PropertyPage/> },
+                AppRouter::HomePage => html! { <Home/> },
             });
 
             html! {
-                <Router<Route, ()> render=render/>
+                <>
+                { self.get_navbar() }
+                <Router<FragmentOnlyRoute<AppRouter>, ()> render=render/>
+                </>
             }
         } else {
             let text = if self.state.get_assets_loaded {
@@ -152,6 +182,37 @@ impl Component for App {
     fn rendered(&mut self, _first_render: bool) {}
 
     fn destroy(&mut self) {}
+}
+
+impl App {
+    fn get_navbar(&self) -> Html {
+        html! {
+          <Navbar fixed=Fixed::None navbar_style=Style::Light navbar_palette=Palette::Info>
+            <NavbarContainer justify_content=JustifyContent::FlexStart(Mode::NoMode)>
+              <NavbarItem
+                  active={self.state.selected_menu == HOME_MENU}
+                  onclick_signal=self.link.callback(move |_| Msg::ChangeMenu(HOME_MENU))>
+                  <RouterAnchor<FragmentOnlyRoute<AppRouter>>route=FragmentOnlyRoute::from(AppRouter::HomePage)>{"Inicio"}</RouterAnchor<FragmentOnlyRoute<AppRouter>>>
+              </NavbarItem>
+              <NavbarItem
+                  active={self.state.selected_menu == PROPERTY_MENU}
+                  onclick_signal=self.link.callback(move |_| Msg::ChangeMenu(PROPERTY_MENU))>
+                  <RouterAnchor<FragmentOnlyRoute<AppRouter>>route=FragmentOnlyRoute::from(AppRouter::Properties)>{"Inmuebles"}</RouterAnchor<FragmentOnlyRoute<AppRouter>>>
+              </NavbarItem>
+              <NavbarItem
+                  active={self.state.selected_menu == VEHICLE_MENU}
+                  onclick_signal=self.link.callback(move |_| Msg::ChangeMenu(VEHICLE_MENU))>
+                  <span>{"Vehículos"}</span>
+              </NavbarItem>
+              <NavbarItem
+                  active={self.state.selected_menu == OTHER_MENU}
+                  onclick_signal=self.link.callback(move |_| Msg::ChangeMenu(OTHER_MENU))>
+                  <span>{"Otros"}</span>
+              </NavbarItem>
+            </NavbarContainer>
+          </Navbar>
+        }
+    }
 }
 
 fn set_global_info() {
