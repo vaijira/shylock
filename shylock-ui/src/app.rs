@@ -3,15 +3,15 @@ use crate::{
     ASSETS, AUCTIONS,
 };
 use crate::{
-    routes::{Home, PropertyPage},
+    routes::{HomePage, OtherPage, PropertyPage, VehiclePage},
     CITIES, MAX_AUCTION_VALUE, PROVINCES,
 };
 
 use shylock_data::provinces::Province;
 use shylock_data::types::{Asset, Auction};
 use std::collections::{BTreeSet, HashMap};
-use yew::{prelude::*, web_sys};
-use yew_router::{prelude::*, route::Route, switch::Permissive, Switch};
+use yew::prelude::*;
+use yew_router::prelude::*;
 use yew_styles::spinner::{Spinner, SpinnerType};
 use yew_styles::text::{Text, TextType};
 use yew_styles::{
@@ -54,16 +54,6 @@ impl Component for App {
     type Properties = ();
 
     fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
-        log::info!(
-            "base_uri: {}",
-            web_sys::window()
-                .unwrap()
-                .document()
-                .unwrap()
-                .base_uri()
-                .unwrap()
-                .unwrap()
-        );
         link.send_message(Msg::GetAssets);
         Self {
             state: State {
@@ -162,13 +152,18 @@ impl Component for App {
             let render =
                 Router::render(|switch: FragmentOnlyRoute<AppRouter>| match switch.inner {
                     AppRouter::Properties => html! { <PropertyPage/> },
-                    AppRouter::HomePage => html! { <Home/> },
+                    AppRouter::Vehicles => html! { <VehiclePage/> },
+                    AppRouter::Others => html! { <OtherPage/> },
+                    AppRouter::Home => html! { <HomePage/> },
+                    AppRouter::Root => html! { <HomePage/> },
                 });
-
+            let redirect = Router::redirect(|_: Route<()>| FragmentOnlyRoute {
+                inner: AppRouter::Root,
+            });
             html! {
                 <>
                 { self.get_navbar() }
-                <Router<FragmentOnlyRoute<AppRouter>, ()> render=render/>
+                <Router<FragmentOnlyRoute<AppRouter>, ()> render=render redirect=redirect/>
                 </>
             }
         } else {
@@ -208,7 +203,7 @@ impl App {
               <NavbarItem
                   active={self.state.selected_menu == HOME_MENU}
                   onclick_signal=self.link.callback(move |_| Msg::ChangeMenu(HOME_MENU))>
-                  <RouterAnchor<FragmentOnlyRoute<AppRouter>>route=FragmentOnlyRoute::from(AppRouter::HomePage)>{"Inicio"}</RouterAnchor<FragmentOnlyRoute<AppRouter>>>
+                  <RouterAnchor<FragmentOnlyRoute<AppRouter>>route=FragmentOnlyRoute::from(AppRouter::Home)>{"Inicio"}</RouterAnchor<FragmentOnlyRoute<AppRouter>>>
               </NavbarItem>
               <NavbarItem
                   active={self.state.selected_menu == PROPERTY_MENU}
@@ -218,12 +213,12 @@ impl App {
               <NavbarItem
                   active={self.state.selected_menu == VEHICLE_MENU}
                   onclick_signal=self.link.callback(move |_| Msg::ChangeMenu(VEHICLE_MENU))>
-                  <span>{"Vehículos"}</span>
+                  <RouterAnchor<FragmentOnlyRoute<AppRouter>>route=FragmentOnlyRoute::from(AppRouter::Vehicles)>{"Vehículos"}</RouterAnchor<FragmentOnlyRoute<AppRouter>>>
               </NavbarItem>
               <NavbarItem
                   active={self.state.selected_menu == OTHER_MENU}
                   onclick_signal=self.link.callback(move |_| Msg::ChangeMenu(OTHER_MENU))>
-                  <span>{"Otros"}</span>
+                  <RouterAnchor<FragmentOnlyRoute<AppRouter>>route=FragmentOnlyRoute::from(AppRouter::Others)>{"Otros bienes"}</RouterAnchor<FragmentOnlyRoute<AppRouter>>>
               </NavbarItem>
             </NavbarContainer>
           </Navbar>

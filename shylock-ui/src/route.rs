@@ -4,8 +4,14 @@ use yew_router::prelude::*;
 pub enum AppRouter {
     #[to = "#properties"]
     Properties,
+    #[to = "#vehicles"]
+    Vehicles,
+    #[to = "#others"]
+    Others,
     #[to = "#home"]
-    HomePage,
+    Home,
+    #[to = "/!"]
+    Root,
 }
 /// A wrapper around a Route that enables fragment-only routing
 ///
