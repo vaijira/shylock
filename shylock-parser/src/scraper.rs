@@ -1,4 +1,4 @@
-use crate::{geosolver::GeoSolver, parser::*};
+use crate::{geosolver::GeoSolver, parser::*, AuctionMap};
 use geo_types::Point;
 use shylock_data::types::{Asset, Auction, LotAuctionKind, Management};
 use std::collections::HashMap;
@@ -43,33 +43,30 @@ impl UrlFetcher {
 
 fn get_auctions_links(url_fetcher: &UrlFetcher) -> Result<Vec<String>, Box<dyn std::error::Error>> {
     let main_page = url_fetcher.get_url(&MAIN_AUCTION_BOE_URL)?;
-    let mut result = parse_result_page(&main_page)?;
+    let mut result = parse_result_page(&main_page);
 
-    for page_url in parse_extra_pages(&main_page)? {
+    for page_url in parse_extra_pages(&main_page) {
         let extra_page = url_fetcher.get_url(&page_url)?;
-        result.append(&mut parse_result_page(&extra_page)?);
+        result.append(&mut parse_result_page(&extra_page));
     }
 
     Ok(result)
 }
 
 fn update_asset_coordinates(asset: &mut Asset, geosolver: &GeoSolver) {
-    match asset {
-        Asset::Property(property) => {
-            property.coordinates = match geosolver.resolve(
-                &property.city,
-                property.province.name(),
-                DEFAULT_COUNTRY,
-                &property.postal_code,
-            ) {
-                Ok(coordinates) => coordinates,
-                Err(error) => {
-                    log::warn!("Unable to retrieve coordinates: {}", error);
-                    Some(Point::new(0.0, 0.0))
-                }
-            };
-        }
-        _ => (),
+    if let Asset::Property(property) = asset {
+        property.coordinates = match geosolver.resolve(
+            &property.city,
+            property.province.name(),
+            DEFAULT_COUNTRY,
+            &property.postal_code,
+        ) {
+            Ok(coordinates) => coordinates,
+            Err(error) => {
+                log::warn!("Unable to retrieve coordinates: {}", error);
+                Some(Point::new(0.0, 0.0))
+            }
+        };
     }
 }
 
@@ -113,7 +110,7 @@ fn process_auction_link(
 }
 
 /// Scrape subastas.boe.es to get all assets in auctions.
-pub fn scrape() -> Result<(HashMap<String, Auction>, Vec<Asset>), Box<dyn std::error::Error>> {
+pub fn scrape() -> Result<(AuctionMap, Vec<Asset>), Box<dyn std::error::Error>> {
     let url_fetcher = UrlFetcher::new();
     let mut total_assets = Vec::new();
     let mut total_auctions = HashMap::new();

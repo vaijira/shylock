@@ -69,11 +69,7 @@ pub(crate) fn parse_asset_auction_page(
 
     result.insert(
         BoeConcept::Header,
-        header
-            .text()
-            .collect::<String>()
-            .trim()
-            .to_uppercase()
+        header.text().collect::<String>().trim().to_uppercase(),
     );
 
     Ok(result)
@@ -125,11 +121,7 @@ pub(crate) fn parse_lot_auction_page(
 
     result.insert(
         BoeConcept::Header,
-        header
-            .text()
-            .collect::<String>()
-            .trim()
-            .to_uppercase()
+        header.text().collect::<String>().trim().to_uppercase(),
     );
 
     Ok(result)
@@ -180,9 +172,7 @@ pub(crate) fn parse_main_auction_page(
     )
 }
 
-pub(crate) fn parse_extra_pages(
-    main_page: &str,
-) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+pub(crate) fn parse_extra_pages(main_page: &str) -> Vec<String> {
     let mut result = Vec::new();
     let doc = Html::parse_document(main_page);
     let pages_div = Selector::parse("div.paginar2").expect("div.paginar2 selector creation failed");
@@ -198,10 +188,10 @@ pub(crate) fn parse_extra_pages(
 
     result.pop();
 
-    Ok(result)
+    result
 }
 
-pub(crate) fn parse_result_page(page: &str) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+pub(crate) fn parse_result_page(page: &str) -> Vec<String> {
     let mut result = Vec::new();
 
     let doc = Html::parse_document(page);
@@ -215,7 +205,7 @@ pub(crate) fn parse_result_page(page: &str) -> Result<Vec<String>, Box<dyn std::
         }
     }
 
-    Ok(result)
+    result
 }
 
 #[cfg(test)]
@@ -422,7 +412,7 @@ mod tests {
     </li>
   </ul>
 </div></body>"#;
-        let pages = parse_extra_pages(INPUT).unwrap();
+        let pages = parse_extra_pages(INPUT);
         assert_eq!(2, pages.len());
         assert_eq!(&"https://subastas.boe.es/subastas_ava.php?accion=Mas&id_busqueda=_SGFOTnU2NVlnSUwvd2czQzBFcHdoUDFlZTZGS1pLT1lwNm5pbmNIdmNGTXpLNUpZcXNGRElabzlLSGdEckkwL1NuQmpKT3lSd3Z2QTJiM0dPTURUNXBYOEhSNzhqRG5CdExSSXFxZkZSM1phdTh2bkIwUjRXaWFwdkJ2ZzNmVmV0NWc5NjJpU2FDdHQ1amc1SHJSUmhGTGFSTkk4dlFkSWYwTXA5ckFaRUh2TWtkcjM4UmFVY3VCa1JOcklEdWFDdFZpcC81Z0I4UVVYRDdqQjhLeW9RZ2R3aHpOMzRXY1cyZWJwZWRKSXY2RkRHRndmL2JIUXFQckVHdVYzUEh6VA,,-500-500",
                    pages.get(0).unwrap());
@@ -750,6 +740,6 @@ mod tests {
             BASE_BOE_URL.to_owned() + "./detalleSubasta.php?idSub=SUB-JA-2020-149625&idBus=_SGFOTnU2NVlnSUwvd2czQzBFcHdoUDFlZTZGS1pLT1lwNm5pbmNIdmNGTXpLNUpZcXNGRElabzlLSGdEckkwL1NuQmpKT3lSd3Z2QTJiM0dPTURUNXBYOEhSNzhqRG5CdExSSXFxZkZSM1phdTh2bkIwUjRXaWFwdkJ2ZzNmVmV0NWc5NjJpU2FDdHQ1amc1SHJSUmhGTGFSTkk4dlFkSWYwTXA5ckFaRUh2TWtkcjM4UmFVY3VCa1JOcklEdWFDdFZpcC81Z0I4UVVYRDdqQjhLeW9RZ2R3aHpOMzRXY1cyZWJwZWRKSXY2RkRHRndmL2JIUXFQckVHdVYzUEh6VA,,",
             BASE_BOE_URL.to_owned() + "./detalleSubasta.php?idSub=SUB-AT-2020-20R4186001070&idBus=_SGFOTnU2NVlnSUwvd2czQzBFcHdoUDFlZTZGS1pLT1lwNm5pbmNIdmNGTXpLNUpZcXNGRElabzlLSGdEckkwL1NuQmpKT3lSd3Z2QTJiM0dPTURUNXBYOEhSNzhqRG5CdExSSXFxZkZSM1phdTh2bkIwUjRXaWFwdkJ2ZzNmVmV0NWc5NjJpU2FDdHQ1amc1SHJSUmhGTGFSTkk4dlFkSWYwTXA5ckFaRUh2TWtkcjM4UmFVY3VCa1JOcklEdWFDdFZpcC81Z0I4UVVYRDdqQjhLeW9RZ2R3aHpOMzRXY1cyZWJwZWRKSXY2RkRHRndmL2JIUXFQckVHdVYzUEh6VA,,"];
 
-        assert_eq!(links, parse_result_page(INPUT).unwrap());
+        assert_eq!(links, parse_result_page(INPUT));
     }
 }

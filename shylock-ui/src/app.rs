@@ -238,45 +238,54 @@ impl App {
 }
 
 fn set_global_info() {
-    if MAX_AUCTION_VALUE.set(
-        AUCTIONS
-            .get()
-            .unwrap()
-            .iter()
-            .map(|(_, auction)| auction.value)
-            .max()
-            .unwrap(),
-    ).is_err() {
+    if MAX_AUCTION_VALUE
+        .set(
+            AUCTIONS
+                .get()
+                .unwrap()
+                .iter()
+                .map(|(_, auction)| auction.value)
+                .max()
+                .unwrap(),
+        )
+        .is_err()
+    {
         log::error!("Not able to set max auction value");
     };
 
-    if PROVINCES.set(
-        ASSETS
-            .get()
-            .unwrap()
-            .iter()
-            .filter_map(|asset| match asset {
-                Asset::Property(property) => Some(property.province),
-                Asset::Vehicle(_) => None,
-                Asset::Other(_) => None,
-            })
-            .collect::<BTreeSet<Province>>(),
-    ).is_err() {
+    if PROVINCES
+        .set(
+            ASSETS
+                .get()
+                .unwrap()
+                .iter()
+                .filter_map(|asset| match asset {
+                    Asset::Property(property) => Some(property.province),
+                    Asset::Vehicle(_) => None,
+                    Asset::Other(_) => None,
+                })
+                .collect::<BTreeSet<Province>>(),
+        )
+        .is_err()
+    {
         log::error!("Not able to set provinces");
     };
 
-    if CITIES.set(
-        ASSETS
-            .get()
-            .unwrap()
-            .iter()
-            .filter_map(|asset| match asset {
-                Asset::Property(property) => Some(&property.city[..]),
-                Asset::Vehicle(_) => None,
-                Asset::Other(_) => None,
-            })
-            .collect::<BTreeSet<&str>>(),
-    ).is_err() {
+    if CITIES
+        .set(
+            ASSETS
+                .get()
+                .unwrap()
+                .iter()
+                .filter_map(|asset| match asset {
+                    Asset::Property(property) => Some(&property.city[..]),
+                    Asset::Vehicle(_) => None,
+                    Asset::Other(_) => None,
+                })
+                .collect::<BTreeSet<&str>>(),
+        )
+        .is_err()
+    {
         log::error!("Not able to set cities");
     };
 }
