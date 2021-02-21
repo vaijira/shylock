@@ -78,5 +78,9 @@ fn get_valuation(auction_id: &str) -> String {
     buf.write_formatted(&valuation.trunc().to_u64().unwrap_or(0), &Locale::es);
 
     // Get a view into the buffer as a &str...
-    format!("{},{}", buf.as_str(), valuation.fract().to_u32().unwrap_or(0))
+    format!(
+        "{},{}",
+        buf.as_str(),
+        valuation.fract().to_u32().unwrap_or(0)
+    )
 }

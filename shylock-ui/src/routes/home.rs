@@ -1,4 +1,3 @@
-use log;
 use yew::prelude::*;
 use yew_styles::layouts::{
     container::{Container, Direction, Wrap},

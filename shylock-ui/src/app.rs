@@ -93,9 +93,8 @@ impl Component for App {
                 true
             }
             Msg::GotAssets(assets) => {
-                match ASSETS.set(assets) {
-                    Err(_) => log::error!("Not able to set global assets"),
-                    _ => (),
+                if ASSETS.set(assets).is_err() {
+                    log::error!("Not able to set global assets")
                 }
                 log::info!("Loaded {} assets", ASSETS.get().unwrap().len());
                 self.state.get_assets_loaded = true;
@@ -125,9 +124,8 @@ impl Component for App {
                 true
             }
             Msg::GotAuctions(auctions) => {
-                match AUCTIONS.set(auctions) {
-                    Err(_) => log::error!("Not able to set global auctions"),
-                    _ => (),
+                if AUCTIONS.set(auctions).is_err() {
+                    log::error!("Not able to set global auctions");
                 }
                 log::info!("Loaded {} auctions", AUCTIONS.get().unwrap().len());
                 self.state.get_auctions_loaded = true;

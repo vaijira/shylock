@@ -1,7 +1,6 @@
 use crate::components::AssetView;
 use crate::{ASSETS, CITIES, PROVINCES};
 
-use log;
 use shylock_data::provinces::Province;
 use shylock_data::types::Asset;
 use yew::prelude::*;

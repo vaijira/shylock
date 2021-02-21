@@ -1,5 +1,7 @@
 # Shylock
 
+[![Pull Request](https://github.com/vaijira/shylock/actions/workflows/main.yml/badge.svg)](https://github.com/vaijira/shylock/actions/workflows/main.yml)
+
 Library and utilities to scrape and show auction information.
 Current support:
 

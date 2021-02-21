@@ -1,7 +1,6 @@
 use crate::components::AssetView;
 use crate::ASSETS;
 
-use log;
 use shylock_data::types::Asset;
 use yew::prelude::*;
 use yew_styles::layouts::{
