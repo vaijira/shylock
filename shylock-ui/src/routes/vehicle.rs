@@ -71,7 +71,7 @@ impl VehiclePage {
 fn get_items(asset: Html) -> Html {
     html! {
         <Item
-            layouts=vec!(ItemLayout::ItXl(3))
+            layouts=vec!(ItemLayout::ItXl(4))
         >
             {asset}
         </Item>
