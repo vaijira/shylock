@@ -94,6 +94,9 @@ boe_auction_concepts! {
     /// Specify physical address of the resource.
     (Address, "DIRECCIÓN");
 
+    /// Allotment
+    (Allotment, "PARCELA");
+
     /// Value of the asset according to official authorities.
     (Appraisal, "TASACIÓN");
 
@@ -192,6 +195,9 @@ boe_auction_concepts! {
 
     /// Owner status of the asset.
     (OwnerStatus, "SITUACIÓN POSESORIA");
+
+    /// Place
+    (Place, "PARAJE");
 
     /// Postal code.
     (PostalCode, "CÓDIGO POSTAL");
