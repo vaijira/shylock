@@ -53,7 +53,7 @@ fn get_auctions_links(url_fetcher: &UrlFetcher) -> Result<Vec<String>, Box<dyn s
     Ok(result)
 }
 
-fn update_asset_coordinates(asset: &mut Asset, geosolver: &GeoSolver) -> () {
+fn update_asset_coordinates(asset: &mut Asset, geosolver: &GeoSolver) {
     match asset {
         Asset::Property(property) => {
             property.coordinates = match geosolver.resolve(

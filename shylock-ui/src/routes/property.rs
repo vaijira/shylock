@@ -59,7 +59,7 @@ impl Component for PropertyPage {
                 log::debug!("Called update, province: {}", self.state.province.name());
             }
             Msg::SelectCity(value) => {
-                if &value == BLANK_OPTION {
+                if value == BLANK_OPTION {
                     self.state.city = BLANK_OPTION;
                 } else {
                     self.state.city = CITIES.get().unwrap().get(&value[..]).unwrap();

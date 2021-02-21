@@ -238,7 +238,7 @@ impl App {
 }
 
 fn set_global_info() {
-    match MAX_AUCTION_VALUE.set(
+    if MAX_AUCTION_VALUE.set(
         AUCTIONS
             .get()
             .unwrap()
@@ -246,12 +246,11 @@ fn set_global_info() {
             .map(|(_, auction)| auction.value)
             .max()
             .unwrap(),
-    ) {
-        Err(_) => log::error!("Not able to set max auction value"),
-        _ => (),
+    ).is_err() {
+        log::error!("Not able to set max auction value");
     };
 
-    match PROVINCES.set(
+    if PROVINCES.set(
         ASSETS
             .get()
             .unwrap()
@@ -262,12 +261,11 @@ fn set_global_info() {
                 Asset::Other(_) => None,
             })
             .collect::<BTreeSet<Province>>(),
-    ) {
-        Err(_) => log::error!("Not able to set provinces"),
-        _ => (),
+    ).is_err() {
+        log::error!("Not able to set provinces");
     };
 
-    match CITIES.set(
+    if CITIES.set(
         ASSETS
             .get()
             .unwrap()
@@ -278,8 +276,7 @@ fn set_global_info() {
                 Asset::Other(_) => None,
             })
             .collect::<BTreeSet<&str>>(),
-    ) {
-        Err(_) => log::error!("Not able to set cities"),
-        _ => (),
+    ).is_err() {
+        log::error!("Not able to set cities");
     };
 }

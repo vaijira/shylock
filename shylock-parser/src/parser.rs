@@ -74,7 +74,6 @@ pub(crate) fn parse_asset_auction_page(
             .collect::<String>()
             .trim()
             .to_uppercase()
-            .to_owned(),
     );
 
     Ok(result)
@@ -131,7 +130,6 @@ pub(crate) fn parse_lot_auction_page(
             .collect::<String>()
             .trim()
             .to_uppercase()
-            .to_owned(),
     );
 
     Ok(result)
