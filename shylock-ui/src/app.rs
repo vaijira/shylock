@@ -9,7 +9,10 @@ use crate::{
 
 use shylock_data::provinces::Province;
 use shylock_data::types::{Asset, Auction};
-use std::collections::{BTreeSet, HashMap};
+use std::{
+    cmp::max,
+    collections::{BTreeSet, HashMap},
+};
 use yew::prelude::*;
 use yew_router::prelude::*;
 use yew_styles::layouts::{
@@ -238,16 +241,33 @@ impl App {
 }
 
 fn set_global_info() {
+    let max_auctions = AUCTIONS
+        .get()
+        .unwrap()
+        .iter()
+        .map(|(_, auction)| auction.bidinfo.value)
+        .max()
+        .unwrap();
+
+    let max_assets = ASSETS
+        .get()
+        .unwrap()
+        .iter()
+        .filter(|asset| match asset {
+            Asset::Property(property) => property.bidinfo.is_some(),
+            Asset::Vehicle(vehicle) => vehicle.bidinfo.is_some(),
+            Asset::Other(other) => other.bidinfo.is_some(),
+        })
+        .map(|asset| match asset {
+            Asset::Property(property) => property.bidinfo.as_ref().unwrap().value,
+            Asset::Vehicle(vehicle) => vehicle.bidinfo.as_ref().unwrap().value,
+            Asset::Other(other) => other.bidinfo.as_ref().unwrap().value,
+        })
+        .max()
+        .unwrap();
+
     if MAX_AUCTION_VALUE
-        .set(
-            AUCTIONS
-                .get()
-                .unwrap()
-                .iter()
-                .map(|(_, auction)| auction.value)
-                .max()
-                .unwrap(),
-        )
+        .set(max(max_assets, max_auctions))
         .is_err()
     {
         log::error!("Not able to set max auction value");

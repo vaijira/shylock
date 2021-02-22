@@ -133,6 +133,34 @@ impl Management {
     }
 }
 
+/// Bid information struct
+#[derive(Debug, Eq, PartialEq, Deserialize, Serialize)]
+pub struct BidInfo {
+    /// Auction value.
+    pub value: Decimal,
+    /// Valuation of the assets.
+    pub appraisal: Decimal,
+    /// Minimum bid for the auction.
+    pub minimum_bid: Decimal,
+    /// Steps for each bid
+    pub bid_step: Decimal,
+    /// Deposit if someone wants to participate in the auction
+    pub deposit: Decimal,
+}
+
+impl BidInfo {
+    /// Create a new Auction
+    pub fn new(data: &HashMap<BoeConcept, String>) -> BidInfo {
+        BidInfo {
+            value: get_decimal(data, &BoeConcept::AuctionValue),
+            appraisal: get_decimal(data, &BoeConcept::Appraisal),
+            minimum_bid: get_decimal(data, &BoeConcept::MinimumBid),
+            bid_step: get_decimal(data, &BoeConcept::BidStep),
+            deposit: get_decimal(data, &BoeConcept::DepositAmount),
+        }
+    }
+}
+
 /// All posible kind of auctions.
 #[derive(Debug, Eq, PartialEq, Deserialize, Serialize)]
 pub enum AuctionKind {
@@ -180,22 +208,14 @@ pub struct Auction {
     pub lot_kind: LotAuctionKind,
     /// Auction management.
     pub management: Management,
-    /// Auction value.
-    pub value: Decimal,
-    /// Valuation of the assets.
-    pub appraisal: Decimal,
-    /// Minimum bid for the auction.
-    pub minimum_bid: Decimal,
+    /// BidInfo.
+    pub bidinfo: BidInfo,
     /// When the auction starts.
     pub start_date: NaiveDate,
     /// End date for auction.
     pub end_date: NaiveDate,
     /// Notice in official bulletin
     pub notice: String,
-    /// Steps for each bid
-    pub bid_step: Decimal,
-    /// Deposit if someone wants to participate in the auction
-    pub deposit: Decimal,
 }
 
 impl Auction {
@@ -216,18 +236,14 @@ impl Auction {
             claim_quantity: get_decimal(data, &BoeConcept::ClaimQuantity),
             lots,
             lot_kind: get_lot_auction_kind(data),
-            value: get_decimal(data, &BoeConcept::AuctionValue),
-            appraisal: get_decimal(data, &BoeConcept::Appraisal),
             management,
-            minimum_bid: get_decimal(data, &BoeConcept::MinimumBid),
+            bidinfo: BidInfo::new(data),
             start_date: get_date(data, &BoeConcept::StartDate),
             end_date: get_date(data, &BoeConcept::EndDate),
             notice: data
                 .get(&BoeConcept::Notice)
                 .unwrap_or(&String::from("BOE"))
                 .to_string(),
-            bid_step: get_decimal(data, &BoeConcept::BidStep),
-            deposit: get_decimal(data, &BoeConcept::DepositAmount),
         }
     }
 }
@@ -239,6 +255,8 @@ pub struct Property {
     pub address: String,
     /// Unique identifier is linked to.
     pub auction_id: String,
+    /// Bid info
+    pub bidinfo: Option<BidInfo>,
     /// Catastro reference.
     pub catastro_reference: String,
     /// Category of the property (it should be real state).
@@ -290,12 +308,18 @@ impl Property {
             .get(&BoeConcept::PostalCode)
             .unwrap_or(&String::from(NOT_APPLICABLE))
             .to_string();
+        let bidinfo = if let Some(_) = data.get(&BoeConcept::AuctionValue) {
+            Some(BidInfo::new(data))
+        } else {
+            None
+        };
         Property {
             address: data
                 .get(&BoeConcept::Address)
                 .unwrap_or(&String::from(NOT_APPLICABLE))
                 .to_string(),
             auction_id: auction.to_string(),
+            bidinfo,
             catastro_reference: data
                 .get(&BoeConcept::CatastroReference)
                 .unwrap_or(&String::from(NOT_APPLICABLE))
@@ -336,6 +360,8 @@ impl Property {
 pub struct Vehicle {
     /// Auction identifier is linked to.
     pub auction_id: String,
+    /// Bid info
+    pub bidinfo: Option<BidInfo>,
     /// Vehicle brand.
     pub brand: String,
     /// Category.
@@ -368,8 +394,14 @@ impl Vehicle {
         subcategory: &str,
         data: &HashMap<BoeConcept, String>,
     ) -> Vehicle {
+        let bidinfo = if let Some(_) = data.get(&BoeConcept::AuctionValue) {
+            Some(BidInfo::new(data))
+        } else {
+            None
+        };
         Vehicle {
             auction_id: auction.to_string(),
+            bidinfo,
             brand: data
                 .get(&BoeConcept::Brand)
                 .unwrap_or(&String::from(NOT_APPLICABLE))
@@ -413,6 +445,8 @@ pub struct Other {
     pub additional_information: String,
     /// Auction is linked to.
     pub auction_id: String,
+    /// Bid info
+    pub bidinfo: Option<BidInfo>,
     /// Category.
     pub category: String,
     /// If the asset has any previous charges.
@@ -435,12 +469,18 @@ impl Other {
         subcategory: &str,
         data: &HashMap<BoeConcept, String>,
     ) -> Other {
+        let bidinfo = if let Some(_) = data.get(&BoeConcept::AuctionValue) {
+            Some(BidInfo::new(data))
+        } else {
+            None
+        };
         Other {
             additional_information: data
                 .get(&BoeConcept::AdditionalInformation)
                 .unwrap_or(&String::from(NOT_APPLICABLE))
                 .to_string(),
             auction_id: auction.to_string(),
+            bidinfo,
             category: category.to_string(),
             charges: get_decimal(data, &BoeConcept::Charges),
             description: data
@@ -607,6 +647,14 @@ mod tests {
             email: String::from("SUBASTAS.MURCIA@JUSTICIA.ES"),
         };
 
+        let bid = BidInfo {
+            value: Decimal::new(7512700, DEFAULT_DECIMALS),
+            appraisal: Decimal::new(7512700, DEFAULT_DECIMALS),
+            minimum_bid: Decimal::new(0, DEFAULT_DECIMALS),
+            bid_step: Decimal::new(0, DEFAULT_DECIMALS),
+            deposit: Decimal::new(375635, DEFAULT_DECIMALS),
+        };
+
         let auc = Auction {
             id: String::from("SUB-NE-2020-465937"),
             kind: AuctionKind::NotaryExtraJudicial,
@@ -614,14 +662,10 @@ mod tests {
             lots: 0,
             lot_kind: LotAuctionKind::NotApplicable,
             management: mgm,
-            value: Decimal::new(7512700, DEFAULT_DECIMALS),
-            appraisal: Decimal::new(7512700, DEFAULT_DECIMALS),
-            minimum_bid: Decimal::new(0, DEFAULT_DECIMALS),
+            bidinfo: bid,
             start_date: NaiveDate::parse_from_str("14-07-2020", "%d-%m-%Y").unwrap(),
             end_date: NaiveDate::parse_from_str("03-08-2020", "%d-%m-%Y").unwrap(),
             notice: String::from("BOE-B-2020-21708"),
-            bid_step: Decimal::new(0, DEFAULT_DECIMALS),
-            deposit: Decimal::new(375635, DEFAULT_DECIMALS),
         };
 
         let mgm = Management {
@@ -724,6 +768,91 @@ mod tests {
         let asset_property = Asset::Property(Property {
             address: String::from("CALLE MARIANO DE LOS COBOS 90"),
             auction_id: id.to_string(),
+            bidinfo: None,
+            catastro_reference: String::from("4110202UM5141A0003HH"),
+            category: String::from("INMUEBLE"),
+            charges: Decimal::new(0, DEFAULT_DECIMALS),
+            city: String::from("VALLADOLID"),
+            coordinates: None,
+            description: String::from(
+                "FINCA URBANA SITUADA EN VALLADOLID, CALLE MARIANO DE LOS COBOS NUM.90, BAJO-1º",
+            ),
+            owner_status: String::from("NO CONSTA"),
+            postal_code: String::from("47014"),
+            primary_residence: String::from("SÍ"),
+            province: Province::Valladolid,
+            register_inscription: String::from("CONSTA EN EL EDICTO"),
+            subcategory: String::from("VIVIENDA"),
+            visitable: String::from("NO CONSTA"),
+        });
+
+        assert_eq!(asset_property, Asset::new(id, &asset_property_map));
+    }
+
+    #[test]
+    fn asset_new_lot_property_test() {
+        let asset_property_map: HashMap<BoeConcept, String> = [
+      (BoeConcept::AuctionValue, String::from("15.100,00 €")),
+      (BoeConcept::DepositAmount, String::from("755,00 €")),
+      (BoeConcept::MinimumBid, String::from("SIN PUJA MÍNIMA")),
+      (BoeConcept::BidStep, String::from("302,00 €")),
+      (
+        BoeConcept::Header,
+        String::from("BIEN 1 - INMUEBLE (VIVIENDA)"),
+      ),
+      (
+        BoeConcept::Description,
+        String::from(
+          "FINCA URBANA SITUADA EN VALLADOLID, CALLE MARIANO DE LOS COBOS NUM.90, BAJO-1º",
+        ),
+      ),
+      (
+        BoeConcept::CatastroReference,
+        String::from("4110202UM5141A0003HH"),
+      ),
+      (
+        BoeConcept::Address,
+        String::from("CALLE MARIANO DE LOS COBOS 90"),
+      ),
+      (BoeConcept::PostalCode, String::from("47014")),
+      (BoeConcept::City, String::from("VALLADOLID")),
+      (
+        BoeConcept::Province,
+        String::from("VALLADOLID"),
+      ),
+      (
+        BoeConcept::PrimaryResidence,
+        String::from("SÍ"),
+      ),
+      (
+        BoeConcept::OwnerStatus,
+        String::from("NO CONSTA"),
+      ),
+      (
+        BoeConcept::Visitable,
+        String::from("NO CONSTA"),
+      ),
+      (
+        BoeConcept::RegisterInscription,
+        String::from("CONSTA EN EL EDICTO"),
+      ),
+    ]
+    .iter()
+    .cloned()
+    .collect();
+
+        let id = "id";
+
+        let asset_property = Asset::Property(Property {
+            address: String::from("CALLE MARIANO DE LOS COBOS 90"),
+            auction_id: id.to_string(),
+            bidinfo: Some(BidInfo {
+                value: Decimal::new(15_100_00, DEFAULT_DECIMALS),
+                appraisal: Decimal::new(0, DEFAULT_DECIMALS),
+                minimum_bid: Decimal::new(0, DEFAULT_DECIMALS),
+                bid_step: Decimal::new(302_00, DEFAULT_DECIMALS),
+                deposit: Decimal::new(755_00, DEFAULT_DECIMALS),
+            }),
             catastro_reference: String::from("4110202UM5141A0003HH"),
             category: String::from("INMUEBLE"),
             charges: Decimal::new(0, DEFAULT_DECIMALS),
@@ -747,6 +876,10 @@ mod tests {
     #[test]
     fn asset_new_vehicle_test() {
         let asset_vehicle_map: HashMap<BoeConcept, String> = [
+      (BoeConcept::AuctionValue, String::from("15.100,00 €")),
+      (BoeConcept::DepositAmount, String::from("755,00 €")),
+      (BoeConcept::MinimumBid, String::from("SIN PUJA MÍNIMA")),
+      (BoeConcept::BidStep, String::from("302,00 €")),
       (
         BoeConcept::Header,
         String::from("BIEN 1 - VEHÍCULO (TURISMOS)"),
@@ -788,6 +921,13 @@ mod tests {
 
         let asset_vehicle = Asset::Vehicle(Vehicle {
             auction_id: id.to_string(),
+            bidinfo: Some(BidInfo {
+                value: Decimal::new(15_100_00, DEFAULT_DECIMALS),
+                appraisal: Decimal::new(0, DEFAULT_DECIMALS),
+                minimum_bid: Decimal::new(0, DEFAULT_DECIMALS),
+                bid_step: Decimal::new(302_00, DEFAULT_DECIMALS),
+                deposit: Decimal::new(755_00, DEFAULT_DECIMALS),
+            }),
             brand: String::from("AUDI"),
             category: String::from("VEHÍCULO"),
             charges:  Decimal::new(0, DEFAULT_DECIMALS),
@@ -809,6 +949,10 @@ mod tests {
     #[test]
     fn asset_new_other_test() {
         let asset_other_map: HashMap<BoeConcept, String> = [
+      (BoeConcept::AuctionValue, String::from("15.100,00 €")),
+      (BoeConcept::DepositAmount, String::from("755,00 €")),
+      (BoeConcept::MinimumBid, String::from("SIN PUJA MÍNIMA")),
+      (BoeConcept::BidStep, String::from("302,00 €")),
       (
         BoeConcept::Header,
         String::from("BIEN 1 - BIEN MUEBLE (OTROS BIENES Y DERECHOS)"),
@@ -843,6 +987,13 @@ mod tests {
         let asset_other = Asset::Other(Other {
             additional_information: String::from("LAS CONDICIONES DE LA TRASMISIÓN Y LOS REQUISITOS DEL CONCESIONARIO SE ENCUENTRAN REGULADAS EN EL REAL DECRETO 1199/1999, DE 9 DE JULIO, POR EL QUE SE DESARROLLA LA LEY 13/1998, DE 4 DE MAYO, DE ORDENACIÓN DEL MERCADO DE TABACOS Y NORMATIVA TRIBUTARIA, Y SE REGULA EL ESTATUTO CONCESIONAL DE LA RED DE EXPENDURÍAS DE TABACO Y TIMBRE. VER FOTOGRAFÍAS ANEXAS. - LA CONCESIÓN FINALIZA 03/12/2042. - DILIGENCIA DE EMBARGO A FAVOR DE LA AEAT(2111623311338X), CON IMPORTE PENDIENTE A FECHA 17-09-2020 DE 10.347,54€."),
             auction_id: id.to_string(),
+            bidinfo: Some(BidInfo {
+                value: Decimal::new(15_100_00, DEFAULT_DECIMALS),
+                appraisal: Decimal::new(0, DEFAULT_DECIMALS),
+                minimum_bid: Decimal::new(0, DEFAULT_DECIMALS),
+                bid_step: Decimal::new(302_00, DEFAULT_DECIMALS),
+                deposit: Decimal::new(755_00, DEFAULT_DECIMALS),
+            }),
             category: String::from("BIEN MUEBLE"),
             charges:  Decimal::new(1034754, DEFAULT_DECIMALS),
             description: String::from(

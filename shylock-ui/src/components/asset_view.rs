@@ -2,7 +2,7 @@ use crate::AUCTIONS;
 
 use num_format::{Buffer, Locale};
 use rust_decimal::prelude::*;
-use shylock_data::types::Asset;
+use shylock_data::{types::Asset, BidInfo};
 use yew::prelude::*;
 use yew_styles::card::Card;
 use yew_styles::styles::{Palette, Size, Style};
@@ -44,7 +44,7 @@ impl Component for AssetView {
                   card_style=Style::Outline
                   header=Some(html!{<div>{"Inmueble"}</div>})
                   body=Some(html!{<div>{&property.description}</div>})
-                  footer=Some(html!{<div><b>{get_valuation(&property.auction_id)}{" €"}</b></div>}) />
+                  footer=Some(html!{<div><b>{get_valuation(&property.bidinfo, &property.auction_id)}{" €"}</b></div>}) />
             },
             Asset::Vehicle(vehicle) => html! {
                 <Card
@@ -54,7 +54,7 @@ impl Component for AssetView {
                   card_style=Style::Outline
                   header=Some(html!{<div>{"Vehículo"}</div>})
                   body=Some(html!{<div>{&vehicle.description}</div>})
-                  footer=Some(html!{<div><b>{get_valuation(&vehicle.auction_id)}{" €"}</b></div>}) />
+                  footer=Some(html!{<div><b>{get_valuation(&vehicle.bidinfo, &vehicle.auction_id)}{" €"}</b></div>}) />
             },
             Asset::Other(other) => html! {
                 <Card
@@ -64,16 +64,27 @@ impl Component for AssetView {
                   card_style=Style::Outline
                   header=Some(html!{<div>{"Bien"}</div>})
                   body=Some(html!{<div>{&other.description}</div>})
-                  footer=Some(html!{<div><b>{get_valuation(&other.auction_id)}{" €"}</b></div>}) />
+                  footer=Some(html!{<div><b>{get_valuation(&other.bidinfo, &other.auction_id)}{" €"}</b></div>}) />
             },
         }
     }
 }
 
-fn get_valuation(auction_id: &str) -> String {
+fn get_valuation(bidinfo: &Option<BidInfo>, auction_id: &str) -> String {
     let mut buf = Buffer::default();
 
-    let valuation = AUCTIONS.get().unwrap().get(auction_id).unwrap().value;
+    let valuation = if bidinfo.is_some() {
+        bidinfo.as_ref().unwrap().value
+    } else {
+        AUCTIONS
+            .get()
+            .unwrap()
+            .get(auction_id)
+            .unwrap()
+            .bidinfo
+            .value
+    };
+
     // Write "1,000,000" into the buffer...
     buf.write_formatted(&valuation.trunc().to_u64().unwrap_or(0), &Locale::es);
 
