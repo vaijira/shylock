@@ -69,7 +69,7 @@ impl Component for App {
                 log::debug!("Get assets");
                 self.link.send_future(async {
                     log::debug!("Request assets");
-                    let response = reqwasm::Request::get("tmp/assets.min.json")
+                    let response = reqwasm::Request::get("tmp/assets.json")
                         .send()
                         .await
                         .expect("Unable to request assets");
@@ -100,7 +100,7 @@ impl Component for App {
                 log::info!("Get auctions");
                 self.link.send_future(async {
                     log::debug!("Request auctions");
-                    let response = reqwasm::Request::get("tmp/auctions.min.json")
+                    let response = reqwasm::Request::get("tmp/auctions.json")
                         .send()
                         .await
                         .expect("Unable to request auctions");
