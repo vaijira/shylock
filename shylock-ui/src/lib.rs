@@ -21,6 +21,7 @@ pub static CITIES: OnceCell<BTreeSet<&str>> = OnceCell::new();
 #[wasm_bindgen(start)]
 pub fn run_app() {
     wasm_logger::init(wasm_logger::Config::default());
+    console_error_panic_hook::set_once();
 
     App::<app::App>::new().mount_to_body();
 }

@@ -10,6 +10,19 @@ use std::collections::HashMap;
 pub(crate) const DEFAULT_DECIMALS: u32 = 2;
 const NOT_APPLICABLE: &str = "NA";
 
+fn get_clean_text(data: &HashMap<BoeConcept, String>, field: &BoeConcept) -> String {
+    if let Some(field_str) = data.get(field) {
+        field_str
+            .replace(",", ", ")
+            .replace(".", ". ")
+            .replace("  ", " ")
+            .trim()
+            .to_string()
+    } else {
+        String::from(NOT_APPLICABLE)
+    }
+}
+
 fn get_date(data: &HashMap<BoeConcept, String>, field: &BoeConcept) -> NaiveDate {
     if let Some(date_str) = data.get(field) {
         let space_offset = date_str.find(' ').unwrap_or_else(|| date_str.len());
@@ -109,10 +122,7 @@ impl Management {
                 .get(&BoeConcept::Code)
                 .unwrap_or(&String::from(NOT_APPLICABLE))
                 .to_string(),
-            description: data
-                .get(&BoeConcept::Description)
-                .unwrap_or(&String::from(NOT_APPLICABLE))
-                .to_string(),
+            description: get_clean_text(data, &BoeConcept::Description),
             address: data
                 .get(&BoeConcept::Address)
                 .unwrap_or(&String::from(NOT_APPLICABLE))
@@ -308,7 +318,7 @@ impl Property {
             .get(&BoeConcept::PostalCode)
             .unwrap_or(&String::from(NOT_APPLICABLE))
             .to_string();
-        let bidinfo = if let Some(_) = data.get(&BoeConcept::AuctionValue) {
+        let bidinfo = if data.get(&BoeConcept::AuctionValue).is_some() {
             Some(BidInfo::new(data))
         } else {
             None
@@ -328,10 +338,7 @@ impl Property {
             charges: get_decimal(data, &BoeConcept::Charges),
             city,
             coordinates: None,
-            description: data
-                .get(&BoeConcept::Description)
-                .unwrap_or(&String::from(NOT_APPLICABLE))
-                .to_string(),
+            description: get_clean_text(data, &BoeConcept::Description),
             owner_status: data
                 .get(&BoeConcept::OwnerStatus)
                 .unwrap_or(&String::from(NOT_APPLICABLE))
@@ -394,7 +401,7 @@ impl Vehicle {
         subcategory: &str,
         data: &HashMap<BoeConcept, String>,
     ) -> Vehicle {
-        let bidinfo = if let Some(_) = data.get(&BoeConcept::AuctionValue) {
+        let bidinfo = if data.get(&BoeConcept::AuctionValue).is_some() {
             Some(BidInfo::new(data))
         } else {
             None
@@ -408,10 +415,7 @@ impl Vehicle {
                 .to_string(),
             category: category.to_string(),
             charges: get_decimal(data, &BoeConcept::Charges),
-            description: data
-                .get(&BoeConcept::Description)
-                .unwrap_or(&String::from(NOT_APPLICABLE))
-                .to_string(),
+            description: get_clean_text(data, &BoeConcept::Description),
             frame_number: data
                 .get(&BoeConcept::FrameNumber)
                 .unwrap_or(&String::from(NOT_APPLICABLE))
@@ -469,7 +473,7 @@ impl Other {
         subcategory: &str,
         data: &HashMap<BoeConcept, String>,
     ) -> Other {
-        let bidinfo = if let Some(_) = data.get(&BoeConcept::AuctionValue) {
+        let bidinfo = if data.get(&BoeConcept::AuctionValue).is_some() {
             Some(BidInfo::new(data))
         } else {
             None
@@ -483,10 +487,7 @@ impl Other {
             bidinfo,
             category: category.to_string(),
             charges: get_decimal(data, &BoeConcept::Charges),
-            description: data
-                .get(&BoeConcept::Description)
-                .unwrap_or(&String::from(NOT_APPLICABLE))
-                .to_string(),
+            description: get_clean_text(data, &BoeConcept::Description),
             judicial_title: data
                 .get(&BoeConcept::JudicialTitle)
                 .unwrap_or(&String::from(NOT_APPLICABLE))
@@ -775,7 +776,7 @@ mod tests {
             city: String::from("VALLADOLID"),
             coordinates: None,
             description: String::from(
-                "FINCA URBANA SITUADA EN VALLADOLID, CALLE MARIANO DE LOS COBOS NUM.90, BAJO-1º",
+                "FINCA URBANA SITUADA EN VALLADOLID, CALLE MARIANO DE LOS COBOS NUM. 90, BAJO-1º",
             ),
             owner_status: String::from("NO CONSTA"),
             postal_code: String::from("47014"),
@@ -859,7 +860,7 @@ mod tests {
             city: String::from("VALLADOLID"),
             coordinates: None,
             description: String::from(
-                "FINCA URBANA SITUADA EN VALLADOLID, CALLE MARIANO DE LOS COBOS NUM.90, BAJO-1º",
+                "FINCA URBANA SITUADA EN VALLADOLID, CALLE MARIANO DE LOS COBOS NUM. 90, BAJO-1º",
             ),
             owner_status: String::from("NO CONSTA"),
             postal_code: String::from("47014"),

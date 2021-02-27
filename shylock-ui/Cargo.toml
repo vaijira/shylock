@@ -11,6 +11,7 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 anyhow = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
+console_error_panic_hook = "0.1"
 geo-types = { version = "0.6",  features = ["serde"] }
 log = "0.4.0"
 num-format = "0.4.0"
@@ -19,6 +20,7 @@ reqwasm = "0.1.0"
 rust_decimal = "1.7.0"
 serde = { version = "1.0", features = ["derive"] }
 shylock-data = { path = "../shylock-data" }
+substring = "1.4"
 yew = "0.17"
 yew-router = "0.14.0"
 yew_styles = { version="0.9", features=["spinner", "layouts", "forms", "text", "navbar", "card"] }
