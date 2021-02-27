@@ -1,4 +1,4 @@
-use crate::AUCTIONS;
+use crate::global::AUCTIONS;
 
 use num_format::{Buffer, Locale};
 use rust_decimal::prelude::*;

@@ -1,5 +1,5 @@
 use crate::components::AssetView;
-use crate::{ASSETS, CITIES, PROVINCES};
+use crate::global::{ASSETS, CITIES, PROVINCES};
 
 use shylock_data::provinces::Province;
 use shylock_data::types::Asset;

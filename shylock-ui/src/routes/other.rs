@@ -1,5 +1,5 @@
 use crate::components::AssetView;
-use crate::ASSETS;
+use crate::global::ASSETS;
 
 use shylock_data::types::Asset;
 use yew::prelude::*;

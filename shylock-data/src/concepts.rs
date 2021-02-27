@@ -53,6 +53,7 @@ macro_rules! boe_auction_concepts {
                     "FECHA DE ADQUISICIÓN" => Ok(BoeConcept::AcquisitionDate),
                     "FECHA DE MATRICULACIÓN" => Ok(BoeConcept::LicensedDate),
                     "REFERENCIA REGISTRAL" => Ok(BoeConcept::RegisterInscription),
+                    "NOMBRE PARAJE" => Ok(BoeConcept::Place),
                     _ => Err(InvalidBoeConcept::new(s)),
                 }
             }
