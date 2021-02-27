@@ -1,12 +1,12 @@
-use crate::routes::{HomePage, OtherPage, PropertyPage, VehiclePage};
+use crate::routes::{HomePage, OtherPage, PageNotFound, PropertyPage, VehiclePage};
 use crate::{
     global::{set_global_info, ASSETS, AUCTIONS},
-    route::{AppRouter, FragmentOnlyRoute},
+    route::{AppAnchor, AppRoute, AppRouter, PublicUrlSwitch},
 };
 use shylock_data::types::{Asset, Auction};
 use std::collections::HashMap;
 use yew::prelude::*;
-use yew_router::prelude::*;
+use yew_router::{prelude::Route, switch::Permissive};
 use yew_styles::layouts::{
     container::{AlignItems, Container, Direction, JustifyContent, Mode, Wrap},
     item::{AlignSelf, Item, ItemLayout},
@@ -145,20 +145,10 @@ impl Component for App {
 
     fn view(&self) -> Html {
         if self.state.get_assets_loaded && self.state.get_auctions_loaded {
-            let render =
-                Router::render(|switch: FragmentOnlyRoute<AppRouter>| match switch.inner {
-                    AppRouter::Properties => html! { <PropertyPage/> },
-                    AppRouter::Vehicles => html! { <VehiclePage/> },
-                    AppRouter::Others => html! { <OtherPage/> },
-                    AppRouter::Home => html! { <HomePage/> },
-                    AppRouter::Root => html! { <HomePage/> },
-                });
-            let redirect =
-                Router::redirect(|_: Route<()>| FragmentOnlyRoute::from(AppRouter::Root));
             html! {
                 <>
                 { self.get_navbar() }
-                <Router<FragmentOnlyRoute<AppRouter>, ()> render=render redirect=redirect/>
+                <app>{ self.get_router() }</app>
                 </>
             }
         } else {
@@ -191,13 +181,28 @@ impl Component for App {
             }
         }
     }
-
-    fn rendered(&mut self, _first_render: bool) {}
-
-    fn destroy(&mut self) {}
 }
 
 impl App {
+    fn get_router(&self) -> Html {
+        html! {<AppRouter render=AppRouter::render(Self::switch) redirect=AppRouter::redirect(|route: Route| {
+            AppRoute::PageNotFound(Permissive(Some(route.route))).into_public()
+        }) />}
+    }
+
+    fn switch(switch: PublicUrlSwitch) -> Html {
+        match switch.route() {
+            AppRoute::Properties => html! { <PropertyPage/> },
+            AppRoute::Vehicles => html! { <VehiclePage/> },
+            AppRoute::Others => html! { <OtherPage/> },
+            AppRoute::Home => html! { <HomePage/> },
+            AppRoute::PageNotFound(Permissive(route)) => {
+                html! { <PageNotFound route=route /> }
+            }
+            AppRoute::Root => html! { <HomePage/> },
+        }
+    }
+
     fn get_navbar(&self) -> Html {
         html! {
           <Navbar class_name="navbar-router" fixed=Fixed::None navbar_style=Style::Outline navbar_palette=Palette::Clean>
@@ -206,25 +211,25 @@ impl App {
                   class_name="navbar-route"
                   active={self.state.selected_menu == HOME_MENU}
                   onclick_signal=self.link.callback(move |_| Msg::ChangeMenu(HOME_MENU))>
-                  <RouterAnchor<FragmentOnlyRoute<AppRouter>>route=FragmentOnlyRoute::from(AppRouter::Home)>{"Inicio"}</RouterAnchor<FragmentOnlyRoute<AppRouter>>>
+                  <AppAnchor route=AppRoute::Home>{"Inicio"}</AppAnchor>
               </NavbarItem>
               <NavbarItem
                   class_name="navbar-route"
                   active={self.state.selected_menu == PROPERTY_MENU}
                   onclick_signal=self.link.callback(move |_| Msg::ChangeMenu(PROPERTY_MENU))>
-                  <RouterAnchor<FragmentOnlyRoute<AppRouter>>route=FragmentOnlyRoute::from(AppRouter::Properties)>{"Inmuebles"}</RouterAnchor<FragmentOnlyRoute<AppRouter>>>
+                  <AppAnchor route=AppRoute::Properties>{"Inmuebles"}</AppAnchor>
               </NavbarItem>
               <NavbarItem
                   class_name="navbar-route"
                   active={self.state.selected_menu == VEHICLE_MENU}
                   onclick_signal=self.link.callback(move |_| Msg::ChangeMenu(VEHICLE_MENU))>
-                  <RouterAnchor<FragmentOnlyRoute<AppRouter>>route=FragmentOnlyRoute::from(AppRouter::Vehicles)>{"Vehículos"}</RouterAnchor<FragmentOnlyRoute<AppRouter>>>
+                  <AppAnchor route=AppRoute::Vehicles>{"Vehículos"}</AppAnchor>
               </NavbarItem>
               <NavbarItem
                   class_name="navbar-route"
                   active={self.state.selected_menu == OTHER_MENU}
                   onclick_signal=self.link.callback(move |_| Msg::ChangeMenu(OTHER_MENU))>
-                  <RouterAnchor<FragmentOnlyRoute<AppRouter>>route=FragmentOnlyRoute::from(AppRouter::Others)>{"Otros bienes"}</RouterAnchor<FragmentOnlyRoute<AppRouter>>>
+                  <AppAnchor route=AppRoute::Others>{"Otros bienes"}</AppAnchor>
               </NavbarItem>
             </NavbarContainer>
           </Navbar>

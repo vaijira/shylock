@@ -1,51 +1,100 @@
-use yew_router::prelude::*;
+use yew::{
+    virtual_dom::{Transformer, VComp},
+    web_sys::Url,
+};
+use yew_router::{components::RouterAnchor, prelude::*, switch::Permissive};
+
+use crate::global::BASE_URI;
 
 #[derive(Switch, Debug, Clone)]
-pub enum AppRouter {
-    #[to = "#properties"]
+pub enum AppRoute {
+    #[to = "/properties"]
     Properties,
-    #[to = "#vehicles"]
+    #[to = "/vehicles"]
     Vehicles,
-    #[to = "#others"]
+    #[to = "/others"]
     Others,
-    #[to = "#home"]
+    #[to = "/page-not-found"]
+    PageNotFound(Permissive<String>),
+    #[to = "/"]
     Home,
     #[to = "/!"]
     Root,
 }
-/// A wrapper around a Route that enables fragment-only routing
-///
-/// When analyzing the current address, the route considers only the fragment identifier.
-/// Conversely, all routes must start with a '#' sign rather than a slash.
-///
-/// This is useful for applications that are expected to be shipped as static files to any file
-/// server, are supposed to work from any file name, and do not require any configuration on the
-/// server side.
-#[derive(Clone)]
-pub struct FragmentOnlyRoute<I: Switch> {
-    pub inner: I,
+
+impl AppRoute {
+    pub fn into_public(self) -> PublicUrlSwitch {
+        PublicUrlSwitch(self)
+    }
+
+    pub fn into_route(self) -> Route {
+        Route::from(self.into_public())
+    }
 }
 
-impl<I: Switch> Switch for FragmentOnlyRoute<I> {
-    fn from_route_part<STATE>(part: String, state: Option<STATE>) -> (Option<Self>, Option<STATE>) {
-        let part = match part.find('#') {
-            Some(i) => &part[i..],
-            None => "",
+/// Helper type which just wraps around the actual `AppRoute` but handles a public url prefix.
+/// We need to have this because we're hosting the example at `/router/` instead of `/`.
+/// This type allows us have the best of both worlds.
+///
+/// IMPORTANT: You *must* specify a `<base>` tag on your webpage in order for this to work!
+/// For more information, see the
+/// [Mozilla Developer Network docs](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base)
+#[derive(Clone, Debug)]
+pub struct PublicUrlSwitch(AppRoute);
+
+impl PublicUrlSwitch {
+    fn base_url() -> Url {
+        if let Some(href) = BASE_URI.get().unwrap() {
+            log::debug!("base_uri {}", href);
+            // since this always returns an absolute URL we turn it into `Url`
+            // so we can more easily get the path.
+            Url::new(&href).unwrap()
+        } else {
+            Url::new("/").unwrap()
         }
-        .to_string();
-        let (slef, outstate) = I::from_route_part(part, state);
-        (slef.map(|s| s.into()), outstate)
+    }
+
+    fn base_path() -> String {
+        let mut path = Self::base_url().pathname();
+        if path.ends_with('/') {
+            // pop the trailing slash because AppRoute already accounts for it
+            path.pop();
+        }
+
+        path
+    }
+
+    pub fn route(self) -> AppRoute {
+        log::debug!("route {:#?}", self.0);
+        self.0
+    }
+}
+impl Switch for PublicUrlSwitch {
+    fn from_route_part<STATE>(part: String, state: Option<STATE>) -> (Option<Self>, Option<STATE>) {
+        log::debug!("part {}", part);
+        if let Some(part) = part.strip_prefix(&Self::base_path()) {
+            let (route, state) = AppRoute::from_route_part(part.to_owned(), state);
+            (route.map(Self), state)
+        } else {
+            (None, None)
+        }
     }
 
     fn build_route_section<STATE>(self, route: &mut String) -> Option<STATE> {
-        // No further adjustments are needed: As the inner route produces URI refrences starting
-        // with a '#', they can just be applied and do not change the resource.
-        self.inner.build_route_section(route)
+        route.push_str(&Self::base_path());
+        self.0.build_route_section(route)
     }
 }
 
-impl<I: Switch> From<I> for FragmentOnlyRoute<I> {
-    fn from(inner: I) -> Self {
-        Self { inner }
+// this allows us to pass `AppRoute` to components which take `PublicUrlSwitch`.
+
+impl Transformer<AppRoute, PublicUrlSwitch> for VComp {
+    fn transform(from: AppRoute) -> PublicUrlSwitch {
+        from.into_public()
     }
 }
+
+// type aliases to make life just a bit easier
+
+pub type AppRouter = Router<PublicUrlSwitch>;
+pub type AppAnchor = RouterAnchor<PublicUrlSwitch>;
