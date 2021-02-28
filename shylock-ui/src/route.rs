@@ -18,8 +18,6 @@ pub enum AppRoute {
     PageNotFound(Permissive<String>),
     #[to = "/"]
     Home,
-    #[to = "/!"]
-    Root,
 }
 
 impl AppRoute {

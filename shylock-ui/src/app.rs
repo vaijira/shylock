@@ -199,7 +199,6 @@ impl App {
             AppRoute::PageNotFound(Permissive(route)) => {
                 html! { <PageNotFound route=route /> }
             }
-            AppRoute::Root => html! { <HomePage/> },
         }
     }
 
