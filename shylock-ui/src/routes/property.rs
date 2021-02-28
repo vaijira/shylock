@@ -1,10 +1,12 @@
-use crate::components::AssetView;
+use crate::components::pagination::ITEMS_PER_PAGE;
+use crate::components::{AssetView, Pagination};
 use crate::global::{ASSETS, CITIES, PROVINCES};
 
 use shylock_data::provinces::Province;
 use shylock_data::types::Asset;
+use std::cmp::min;
 use yew::prelude::*;
-use yew_styles::forms::{form_group::FormGroup, form_select::FormSelect};
+use yew_styles::forms::form_select::FormSelect;
 use yew_styles::layouts::{
     container::{Container, Direction, Wrap},
     item::{Item, ItemLayout},
@@ -15,6 +17,7 @@ use yewtil::NeqAssign;
 const BLANK_OPTION: &str = "";
 
 struct State {
+    current_page: usize,
     province: Province,
     city: &'static str,
 }
@@ -31,6 +34,7 @@ pub struct PropertyPage {
 pub enum Msg {
     SelectProvince(Province),
     SelectCity(String),
+    PaginationChanged(usize),
 }
 
 impl Component for PropertyPage {
@@ -41,6 +45,7 @@ impl Component for PropertyPage {
         Self {
             props,
             state: State {
+                current_page: 0,
                 province: Province::All,
                 city: BLANK_OPTION,
             },
@@ -56,6 +61,7 @@ impl Component for PropertyPage {
                 } else {
                     self.state.province = *PROVINCES.get().unwrap().get(&value).unwrap();
                 }
+                self.state.current_page = 0;
                 log::debug!("Called update, province: {}", self.state.province.name());
             }
             Msg::SelectCity(value) => {
@@ -64,7 +70,11 @@ impl Component for PropertyPage {
                 } else {
                     self.state.city = CITIES.get().unwrap().get(&value[..]).unwrap();
                 }
+                self.state.current_page = 0;
                 log::debug!("Called update, city: {}", self.state.city);
+            }
+            Msg::PaginationChanged(page) => {
+                self.state.current_page = page;
             }
         }
 
@@ -77,6 +87,15 @@ impl Component for PropertyPage {
     }
 
     fn view(&self) -> Html {
+        let items_count = ASSETS
+            .get()
+            .unwrap()
+            .iter()
+            .filter(|asset| self.filter_asset_type(asset))
+            .count();
+        let first_item = self.state.current_page * ITEMS_PER_PAGE;
+        let last_item = min(first_item + ITEMS_PER_PAGE, items_count);
+
         let mut assets: Vec<Html> = ASSETS
             .get()
             .unwrap()
@@ -90,19 +109,36 @@ impl Component for PropertyPage {
             })
             .collect();
 
+        let pagination_callback = self.link.callback(Msg::PaginationChanged);
+        log::debug!(
+            "items_count: {}, current_page: {}, first_item: {}, last_item: {}",
+            items_count,
+            self.state.current_page,
+            first_item,
+            last_item
+        );
         html! {
           <>
             <Container direction=Direction::Row wrap=Wrap::Wrap>
-            <Item layouts=vec!(ItemLayout::ItXs(2))>
-            {get_asset_province_select(self)}
-            </Item>
-            <Item layouts=vec!(ItemLayout::ItXs(2))>
-            {get_asset_city_select(self)}
-            </Item>
-
+              <Item layouts=vec!(ItemLayout::ItXs(2))>
+              {get_asset_province_select(self)}
+              </Item>
+              <Item layouts=vec!(ItemLayout::ItXs(2))>
+              {get_asset_city_select(self)}
+              </Item>
             </Container>
+
             <Container direction=Direction::Row wrap=Wrap::Wrap>
-            {assets.drain(..).map(|x| get_items(x)).collect::<Html>()}
+            <Item layouts=vec!(ItemLayout::ItXs(12))>
+            <Pagination
+              items_count=items_count
+              current_page=self.state.current_page
+              callback=pagination_callback />
+            </Item>
+            </Container>
+
+            <Container direction=Direction::Row wrap=Wrap::Wrap>
+            {assets.drain(first_item..last_item).map(|x| get_items(x)).collect::<Html>()}
             </Container>
          </>
         }
@@ -124,7 +160,7 @@ impl PropertyPage {
 
 fn get_asset_province_select(page: &PropertyPage) -> Html {
     html! {
-    <FormGroup>
+
     <FormSelect
         select_size=Size::Medium
         onchange_signal = page.link.callback(|e: ChangeData|
@@ -147,13 +183,13 @@ fn get_asset_province_select(page: &PropertyPage) -> Html {
      </>
     }/>
 
-    </FormGroup>
+
     }
 }
 
 fn get_asset_city_select(page: &PropertyPage) -> Html {
     html! {
-    <FormGroup>
+
     <FormSelect
         select_size=Size::Medium
         onchange_signal = page.link.callback(|e: ChangeData|
@@ -175,7 +211,6 @@ fn get_asset_city_select(page: &PropertyPage) -> Html {
         </>
     }/>
 
-    </FormGroup>
     }
 }
 
