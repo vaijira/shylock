@@ -4,8 +4,6 @@ use yew::{
 };
 use yew_router::{components::RouterAnchor, prelude::*, switch::Permissive};
 
-use crate::global::BASE_URI;
-
 #[derive(Switch, Debug, Clone)]
 pub enum AppRoute {
     #[to = "/properties"]
@@ -42,7 +40,7 @@ pub struct PublicUrlSwitch(AppRoute);
 
 impl PublicUrlSwitch {
     fn base_url() -> Url {
-        if let Some(href) = BASE_URI.get().unwrap() {
+        if let Ok(Some(href)) = yew::utils::document().base_uri() {
             log::debug!("base_uri {}", href);
             // since this always returns an absolute URL we turn it into `Url`
             // so we can more easily get the path.

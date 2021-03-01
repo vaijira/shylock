@@ -10,16 +10,8 @@ pub static AUCTIONS: OnceCell<HashMap<String, Auction>> = OnceCell::new();
 pub static MAX_AUCTION_VALUE: OnceCell<Decimal> = OnceCell::new();
 pub static PROVINCES: OnceCell<BTreeSet<Province>> = OnceCell::new();
 pub static CITIES: OnceCell<BTreeSet<&str>> = OnceCell::new();
-pub static BASE_URI: OnceCell<Option<String>> = OnceCell::new();
 
 pub(crate) fn set_global_info() {
-    if BASE_URI
-        .set(yew::utils::document().base_uri().unwrap_or(None))
-        .is_err()
-    {
-        log::error!("Unable to set base uri");
-    };
-
     let max_auctions = AUCTIONS
         .get()
         .unwrap()
