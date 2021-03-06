@@ -1,4 +1,6 @@
-use crate::routes::{HomePage, OtherPage, PageNotFound, PropertyPage, VehiclePage};
+use crate::routes::{
+    HomePage, OtherPage, PageNotFound, PropertyDetailPage, PropertyPage, VehiclePage,
+};
 use crate::{
     global::{set_global_info, ASSETS, AUCTIONS},
     route::{AppAnchor, AppRoute, AppRouter, PublicUrlSwitch},
@@ -192,6 +194,7 @@ impl App {
 
     fn switch(switch: PublicUrlSwitch) -> Html {
         match switch.route() {
+            AppRoute::PropertyDetail(id) => html! { <PropertyDetailPage position=id /> },
             AppRoute::Properties => html! { <PropertyPage/> },
             AppRoute::Vehicles => html! { <VehiclePage/> },
             AppRoute::Others => html! { <OtherPage/> },

@@ -1,10 +1,7 @@
-use crate::global::AUCTIONS;
+use crate::global::{format_valuation, get_bidinfo, summarize};
+use crate::route::{AppAnchor, AppRoute};
 
-use num_format::{Buffer, Locale};
-use rust_decimal::prelude::*;
-use shylock_data::{types::Asset, BidInfo};
-use std::{cmp::min, ops::Add};
-use substring::Substring;
+use shylock_data::types::Asset;
 use yew::prelude::*;
 use yew_styles::card::Card;
 use yew_styles::styles::{Palette, Size, Style};
@@ -44,9 +41,9 @@ impl Component for AssetView {
                   card_size=Size::Medium
                   card_palette=Palette::Clean
                   card_style=Style::Outline
-                  header=Some(html!{<div>{"Inmueble"}</div>})
+                  header=Some(html!{<AppAnchor route=AppRoute::PropertyDetail(self.props.position)>{"Inmueble"}</AppAnchor>})
                   body=Some(html!{<div>{summarize(&property.description)}</div>})
-                  footer=Some(html!{<div><b>{get_valuation(&property.bidinfo, &property.auction_id)}{" €"}</b></div>}) />
+                  footer=Some(html!{<div><b>{format_valuation(&get_bidinfo(&property.bidinfo, &property.auction_id).value)}{" €"}</b></div>}) />
             },
             Asset::Vehicle(vehicle) => html! {
                 <Card
@@ -56,7 +53,7 @@ impl Component for AssetView {
                   card_style=Style::Outline
                   header=Some(html!{<div>{"Vehículo"}</div>})
                   body=Some(html!{<div>{summarize(&vehicle.description)}</div>})
-                  footer=Some(html!{<div><b>{get_valuation(&vehicle.bidinfo, &vehicle.auction_id)}{" €"}</b></div>}) />
+                  footer=Some(html!{<div><b>{format_valuation(&get_bidinfo(&vehicle.bidinfo, &vehicle.auction_id).value)}{" €"}</b></div>}) />
             },
             Asset::Other(other) => html! {
                 <Card
@@ -66,47 +63,8 @@ impl Component for AssetView {
                   card_style=Style::Outline
                   header=Some(html!{<div>{"Bien"}</div>})
                   body=Some(html!{<div>{summarize(&other.description)}</div>})
-                  footer=Some(html!{<div><b>{get_valuation(&other.bidinfo, &other.auction_id)}{" €"}</b></div>}) />
+                  footer=Some(html!{<div><b>{format_valuation(&get_bidinfo(&other.bidinfo, &other.auction_id).value)}{" €"}</b></div>}) />
             },
         }
     }
-}
-
-fn get_valuation(bidinfo: &Option<BidInfo>, auction_id: &str) -> String {
-    let mut buf = Buffer::default();
-
-    let valuation = if bidinfo.is_some() {
-        bidinfo.as_ref().unwrap().value
-    } else {
-        AUCTIONS
-            .get()
-            .unwrap()
-            .get(auction_id)
-            .unwrap()
-            .bidinfo
-            .value
-    };
-
-    // Write "1,000,000" into the buffer...
-    buf.write_formatted(&valuation.trunc().to_u64().unwrap_or(0), &Locale::es);
-
-    // Get a view into the buffer as a &str...
-    format!(
-        "{},{}",
-        buf.as_str(),
-        valuation.fract().to_u32().unwrap_or(0)
-    )
-}
-
-const TEXT_LIMIT: usize = 300;
-
-fn summarize(text: &str) -> String {
-    let str_min = min(text.chars().count(), TEXT_LIMIT);
-    let mut new_text = text.substring(0, str_min).to_string();
-
-    if new_text.chars().count() == TEXT_LIMIT {
-        new_text = new_text.add("...");
-    }
-
-    new_text
 }

@@ -6,6 +6,8 @@ use yew_router::{components::RouterAnchor, prelude::*, switch::Permissive};
 
 #[derive(Switch, Debug, Clone)]
 pub enum AppRoute {
+    #[to = "/property/{id}"]
+    PropertyDetail(usize),
     #[to = "/properties"]
     Properties,
     #[to = "/vehicles"]
