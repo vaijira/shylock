@@ -1,5 +1,6 @@
 use crate::routes::{
-    HomePage, OtherPage, PageNotFound, PropertyDetailPage, PropertyPage, VehiclePage,
+    HomePage, OtherDetailPage, OtherPage, PageNotFound, PropertyDetailPage, PropertyPage,
+    VehicleDetailPage, VehiclePage,
 };
 use crate::{
     global::{set_global_info, ASSETS, AUCTIONS},
@@ -54,6 +55,7 @@ impl Component for App {
     type Properties = ();
 
     fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
+        log::debug!("App created");
         link.send_message(Msg::GetAssets);
         Self {
             state: State {
@@ -146,6 +148,7 @@ impl Component for App {
     }
 
     fn view(&self) -> Html {
+        log::debug!("Render App");
         if self.state.get_assets_loaded && self.state.get_auctions_loaded {
             html! {
                 <>
@@ -196,7 +199,9 @@ impl App {
         match switch.route() {
             AppRoute::PropertyDetail(id) => html! { <PropertyDetailPage position=id /> },
             AppRoute::Properties => html! { <PropertyPage/> },
+            AppRoute::VehicleDetail(id) => html! { <VehicleDetailPage position=id /> },
             AppRoute::Vehicles => html! { <VehiclePage/> },
+            AppRoute::OtherDetail(id) => html! { <OtherDetailPage position=id /> },
             AppRoute::Others => html! { <OtherPage/> },
             AppRoute::Home => html! { <HomePage/> },
             AppRoute::PageNotFound(Permissive(route)) => {

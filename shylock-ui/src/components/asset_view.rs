@@ -22,6 +22,8 @@ pub struct AssetView {
 
 pub enum Msg {
     PropertyClicked(MouseEvent),
+    VehicleClicked(MouseEvent),
+    OtherClicked(MouseEvent),
 }
 impl Component for AssetView {
     type Message = Msg;
@@ -41,9 +43,19 @@ impl Component for AssetView {
                 self.router.send(RouteRequest::ChangeRoute(
                     AppRoute::PropertyDetail(self.props.position).into_route(),
                 ));
-                true
+            }
+            Msg::VehicleClicked(_) => {
+                self.router.send(RouteRequest::ChangeRoute(
+                    AppRoute::VehicleDetail(self.props.position).into_route(),
+                ));
+            }
+            Msg::OtherClicked(_) => {
+                self.router.send(RouteRequest::ChangeRoute(
+                    AppRoute::OtherDetail(self.props.position).into_route(),
+                ));
             }
         }
+        true
     }
 
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
@@ -59,32 +71,41 @@ impl Component for AssetView {
                       card_size=Size::Medium
                       card_palette=Palette::Clean
                       card_style=Style::Outline
+                      class_name="pointer"
                       onclick_signal=self.link.callback(Msg::PropertyClicked)
                       header=Some(html!{<>{&property.city}{" "}{&property.province.name()}</>})
                       body=Some(html!{<div>{summarize(&property.description)}</div>})
                       footer=Some(html!{<div><b>{format_valuation(&get_bidinfo(&property.bidinfo, &property.auction_id).value)}{" €"}</b></div>}) />
                 }
             }
-            Asset::Vehicle(vehicle) => html! {
-                <Card
-                  key=self.props.position.to_string()
-                  card_size=Size::Medium
-                  card_palette=Palette::Clean
-                  card_style=Style::Outline
-                  header=Some(html!{<div>{"Vehículo"}</div>})
-                  body=Some(html!{<div>{summarize(&vehicle.description)}</div>})
-                  footer=Some(html!{<div><b>{format_valuation(&get_bidinfo(&vehicle.bidinfo, &vehicle.auction_id).value)}{" €"}</b></div>}) />
-            },
-            Asset::Other(other) => html! {
-                <Card
-                  key=self.props.position.to_string()
-                  card_size=Size::Medium
-                  card_palette=Palette::Clean
-                  card_style=Style::Outline
-                  header=Some(html!{<div>{"Bien"}</div>})
-                  body=Some(html!{<div>{summarize(&other.description)}</div>})
-                  footer=Some(html!{<div><b>{format_valuation(&get_bidinfo(&other.bidinfo, &other.auction_id).value)}{" €"}</b></div>}) />
-            },
+            Asset::Vehicle(vehicle) => {
+                html! {
+                  <Card
+                    key=self.props.position.to_string()
+                    card_size=Size::Medium
+                    card_palette=Palette::Clean
+                    card_style=Style::Outline
+                    class_name="pointer"
+                    onclick_signal=self.link.callback(Msg::VehicleClicked)
+                    header=Some(html!{<div>{"Vehículo"}</div>})
+                    body=Some(html!{<div>{summarize(&vehicle.description)}</div>})
+                    footer=Some(html!{<div><b>{format_valuation(&get_bidinfo(&vehicle.bidinfo, &vehicle.auction_id).value)}{" €"}</b></div>}) />
+                }
+            }
+            Asset::Other(other) => {
+                html! {
+                  <Card
+                    key=self.props.position.to_string()
+                    card_size=Size::Medium
+                    card_palette=Palette::Clean
+                    card_style=Style::Outline
+                    class_name="pointer"
+                    onclick_signal=self.link.callback(Msg::OtherClicked)
+                    header=Some(html!{<div>{"Bien"}</div>})
+                    body=Some(html!{<div>{summarize(&other.description)}</div>})
+                    footer=Some(html!{<div><b>{format_valuation(&get_bidinfo(&other.bidinfo, &other.auction_id).value)}{" €"}</b></div>}) />
+                }
+            }
         }
     }
 

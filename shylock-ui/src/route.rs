@@ -10,8 +10,12 @@ pub enum AppRoute {
     PropertyDetail(usize),
     #[to = "/properties"]
     Properties,
+    #[to = "/vehicle/{id}"]
+    VehicleDetail(usize),
     #[to = "/vehicles"]
     Vehicles,
+    #[to = "/other/{id}"]
+    OtherDetail(usize),
     #[to = "/others"]
     Others,
     #[to = "/page-not-found"]
