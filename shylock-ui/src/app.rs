@@ -150,7 +150,7 @@ impl Component for App {
             html! {
                 <>
                 { self.get_navbar() }
-                <app>{ self.get_router() }</app>
+                { self.get_router() }
                 </>
             }
         } else {

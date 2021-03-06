@@ -146,27 +146,30 @@ impl Management {
 /// Bid information struct
 #[derive(Debug, Eq, PartialEq, Deserialize, Serialize)]
 pub struct BidInfo {
-    /// Auction value.
-    pub value: Decimal,
     /// Valuation of the assets.
     pub appraisal: Decimal,
-    /// Minimum bid for the auction.
-    pub minimum_bid: Decimal,
     /// Steps for each bid
     pub bid_step: Decimal,
+    /// Claim quantity
+    pub claim_quantity: Decimal,
     /// Deposit if someone wants to participate in the auction
     pub deposit: Decimal,
+    /// Minimum bid for the auction.
+    pub minimum_bid: Decimal,
+    /// Auction value.
+    pub value: Decimal,
 }
 
 impl BidInfo {
     /// Create a new Auction
     pub fn new(data: &HashMap<BoeConcept, String>) -> BidInfo {
         BidInfo {
-            value: get_decimal(data, &BoeConcept::AuctionValue),
             appraisal: get_decimal(data, &BoeConcept::Appraisal),
-            minimum_bid: get_decimal(data, &BoeConcept::MinimumBid),
             bid_step: get_decimal(data, &BoeConcept::BidStep),
+            claim_quantity: get_decimal(data, &BoeConcept::ClaimQuantity),
             deposit: get_decimal(data, &BoeConcept::DepositAmount),
+            minimum_bid: get_decimal(data, &BoeConcept::MinimumBid),
+            value: get_decimal(data, &BoeConcept::AuctionValue),
         }
     }
 }
@@ -649,17 +652,18 @@ mod tests {
         };
 
         let bid = BidInfo {
-            value: Decimal::new(7512700, DEFAULT_DECIMALS),
-            appraisal: Decimal::new(7512700, DEFAULT_DECIMALS),
-            minimum_bid: Decimal::new(0, DEFAULT_DECIMALS),
+            appraisal: Decimal::new(75_127_00, DEFAULT_DECIMALS),
             bid_step: Decimal::new(0, DEFAULT_DECIMALS),
-            deposit: Decimal::new(375635, DEFAULT_DECIMALS),
+            claim_quantity: Decimal::new(81_971_57, DEFAULT_DECIMALS),
+            deposit: Decimal::new(375_635, DEFAULT_DECIMALS),
+            minimum_bid: Decimal::new(0, DEFAULT_DECIMALS),
+            value: Decimal::new(7_512_700, DEFAULT_DECIMALS),
         };
 
         let auc = Auction {
             id: String::from("SUB-NE-2020-465937"),
             kind: AuctionKind::NotaryExtraJudicial,
-            claim_quantity: Decimal::new(8197157, DEFAULT_DECIMALS),
+            claim_quantity: Decimal::new(8_197_157, DEFAULT_DECIMALS),
             lots: 0,
             lot_kind: LotAuctionKind::NotApplicable,
             management: mgm,
@@ -848,11 +852,12 @@ mod tests {
             address: String::from("CALLE MARIANO DE LOS COBOS 90"),
             auction_id: id.to_string(),
             bidinfo: Some(BidInfo {
-                value: Decimal::new(15_100_00, DEFAULT_DECIMALS),
                 appraisal: Decimal::new(0, DEFAULT_DECIMALS),
-                minimum_bid: Decimal::new(0, DEFAULT_DECIMALS),
                 bid_step: Decimal::new(302_00, DEFAULT_DECIMALS),
+                claim_quantity: Decimal::new(0, DEFAULT_DECIMALS),
                 deposit: Decimal::new(755_00, DEFAULT_DECIMALS),
+                minimum_bid: Decimal::new(0, DEFAULT_DECIMALS),
+                value: Decimal::new(15_100_00, DEFAULT_DECIMALS),
             }),
             catastro_reference: String::from("4110202UM5141A0003HH"),
             category: String::from("INMUEBLE"),
@@ -923,11 +928,12 @@ mod tests {
         let asset_vehicle = Asset::Vehicle(Vehicle {
             auction_id: id.to_string(),
             bidinfo: Some(BidInfo {
-                value: Decimal::new(15_100_00, DEFAULT_DECIMALS),
                 appraisal: Decimal::new(0, DEFAULT_DECIMALS),
-                minimum_bid: Decimal::new(0, DEFAULT_DECIMALS),
                 bid_step: Decimal::new(302_00, DEFAULT_DECIMALS),
+                claim_quantity: Decimal::new(0, DEFAULT_DECIMALS),
                 deposit: Decimal::new(755_00, DEFAULT_DECIMALS),
+                minimum_bid: Decimal::new(0, DEFAULT_DECIMALS),
+                value: Decimal::new(15_100_00, DEFAULT_DECIMALS),
             }),
             brand: String::from("AUDI"),
             category: String::from("VEHÍCULO"),
@@ -989,11 +995,12 @@ mod tests {
             additional_information: String::from("LAS CONDICIONES DE LA TRASMISIÓN Y LOS REQUISITOS DEL CONCESIONARIO SE ENCUENTRAN REGULADAS EN EL REAL DECRETO 1199/1999, DE 9 DE JULIO, POR EL QUE SE DESARROLLA LA LEY 13/1998, DE 4 DE MAYO, DE ORDENACIÓN DEL MERCADO DE TABACOS Y NORMATIVA TRIBUTARIA, Y SE REGULA EL ESTATUTO CONCESIONAL DE LA RED DE EXPENDURÍAS DE TABACO Y TIMBRE. VER FOTOGRAFÍAS ANEXAS. - LA CONCESIÓN FINALIZA 03/12/2042. - DILIGENCIA DE EMBARGO A FAVOR DE LA AEAT(2111623311338X), CON IMPORTE PENDIENTE A FECHA 17-09-2020 DE 10.347,54€."),
             auction_id: id.to_string(),
             bidinfo: Some(BidInfo {
-                value: Decimal::new(15_100_00, DEFAULT_DECIMALS),
                 appraisal: Decimal::new(0, DEFAULT_DECIMALS),
-                minimum_bid: Decimal::new(0, DEFAULT_DECIMALS),
                 bid_step: Decimal::new(302_00, DEFAULT_DECIMALS),
+                claim_quantity: Decimal::new( 0, DEFAULT_DECIMALS),
                 deposit: Decimal::new(755_00, DEFAULT_DECIMALS),
+                minimum_bid: Decimal::new(0, DEFAULT_DECIMALS),
+                value: Decimal::new(15_100_00, DEFAULT_DECIMALS),
             }),
             category: String::from("BIEN MUEBLE"),
             charges:  Decimal::new(1034754, DEFAULT_DECIMALS),

@@ -1,5 +1,6 @@
 use crate::global::{format_valuation, get_bidinfo, summarize};
-use crate::route::{AppAnchor, AppRoute};
+use crate::route::AppRoute;
+use yew_router::agent::{RouteAgentDispatcher, RouteRequest};
 
 use shylock_data::types::Asset;
 use yew::prelude::*;
@@ -15,18 +16,34 @@ pub struct Props {
 
 pub struct AssetView {
     props: Props,
+    router: RouteAgentDispatcher,
+    link: ComponentLink<Self>,
 }
 
+pub enum Msg {
+    PropertyClicked(MouseEvent),
+}
 impl Component for AssetView {
-    type Message = ();
+    type Message = Msg;
     type Properties = Props;
 
-    fn create(props: Self::Properties, _: ComponentLink<Self>) -> Self {
-        Self { props }
+    fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
+        Self {
+            props,
+            link,
+            router: RouteAgentDispatcher::new(),
+        }
     }
 
-    fn update(&mut self, _: Self::Message) -> ShouldRender {
-        false
+    fn update(&mut self, msg: Self::Message) -> ShouldRender {
+        match msg {
+            Msg::PropertyClicked(_) => {
+                self.router.send(RouteRequest::ChangeRoute(
+                    AppRoute::PropertyDetail(self.props.position).into_route(),
+                ));
+                true
+            }
+        }
     }
 
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
@@ -35,16 +52,19 @@ impl Component for AssetView {
 
     fn view(&self) -> Html {
         match self.props.asset {
-            Asset::Property(property) => html! {
-                <Card
-                  key=self.props.position.to_string()
-                  card_size=Size::Medium
-                  card_palette=Palette::Clean
-                  card_style=Style::Outline
-                  header=Some(html!{<AppAnchor route=AppRoute::PropertyDetail(self.props.position)>{"Inmueble"}</AppAnchor>})
-                  body=Some(html!{<div>{summarize(&property.description)}</div>})
-                  footer=Some(html!{<div><b>{format_valuation(&get_bidinfo(&property.bidinfo, &property.auction_id).value)}{" €"}</b></div>}) />
-            },
+            Asset::Property(property) => {
+                html! {
+                    <Card
+                      key=self.props.position.to_string()
+                      card_size=Size::Medium
+                      card_palette=Palette::Clean
+                      card_style=Style::Outline
+                      onclick_signal=self.link.callback(Msg::PropertyClicked)
+                      header=Some(html!{<>{&property.city}{" "}{&property.province.name()}</>})
+                      body=Some(html!{<div>{summarize(&property.description)}</div>})
+                      footer=Some(html!{<div><b>{format_valuation(&get_bidinfo(&property.bidinfo, &property.auction_id).value)}{" €"}</b></div>}) />
+                }
+            }
             Asset::Vehicle(vehicle) => html! {
                 <Card
                   key=self.props.position.to_string()
@@ -67,4 +87,8 @@ impl Component for AssetView {
             },
         }
     }
+
+    fn rendered(&mut self, _first_render: bool) {}
+
+    fn destroy(&mut self) {}
 }

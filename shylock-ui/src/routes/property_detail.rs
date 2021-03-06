@@ -100,7 +100,7 @@ impl Component for PropertyDetailPage {
                   <Text
                     text_type=TextType::Paragraph
                     text_size=Size::Medium
-                    plain_text="Valor propiedad:"
+                    plain_text="Valor subasta:"
                     html_text=None />
                 </Item>
                 <Item layouts=vec!(ItemLayout::ItXs(10))>
@@ -109,6 +109,20 @@ impl Component for PropertyDetailPage {
                     text_size=Size::Medium
                     plain_text=""
                     html_text=html!{<>{format_valuation(&get_bidinfo(&property.bidinfo, &property.auction_id).value)}{" €"}</>} />
+                </Item>
+                <Item layouts=vec!(ItemLayout::ItXs(2))>
+                  <Text
+                    text_type=TextType::Paragraph
+                    text_size=Size::Medium
+                    plain_text="Cantidad reclamada:"
+                    html_text=None />
+                </Item>
+                <Item layouts=vec!(ItemLayout::ItXs(10))>
+                  <Text
+                    text_type=TextType::Paragraph
+                    text_size=Size::Medium
+                    plain_text=""
+                    html_text=html!{<>{format_valuation(&get_bidinfo(&property.bidinfo, &property.auction_id).claim_quantity)}{" €"}</>} />
                 </Item>
                 <Item layouts=vec!(ItemLayout::ItXs(2))>
                   <Text

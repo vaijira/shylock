@@ -216,10 +216,6 @@ fn get_asset_city_select(page: &PropertyPage) -> Html {
 
 fn get_items(asset: Html) -> Html {
     html! {
-        <Item
-            layouts=vec!(ItemLayout::ItXl(4))
-        >
-            {asset}
-        </Item>
+        <Item layouts=vec!(ItemLayout::ItXl(4))>{asset}</Item>
     }
 }
