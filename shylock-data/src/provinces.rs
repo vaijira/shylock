@@ -112,8 +112,8 @@ macro_rules! auction_provinces {
 
         #[test]
         fn test_parse_invalid_province() {
-            let invalid_concept = "non-sense";
-            assert_eq!(invalid_concept.parse::<Province>(), Err(InvalidProvince::new(invalid_concept)));
+            let invalid_province = "non-sense";
+            assert_eq!(invalid_province.parse::<Province>(), Err(InvalidProvince::new(invalid_province)));
         }
     }
 }

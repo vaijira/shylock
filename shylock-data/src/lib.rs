@@ -2,6 +2,9 @@
 
 //! Main data structures holding information about spanish auctions.
 
+/// Different asset categories
+pub mod categories;
+
 /// Auction concepts
 pub mod concepts;
 

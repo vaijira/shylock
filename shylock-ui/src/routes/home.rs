@@ -42,11 +42,14 @@ impl Component for HomePage {
                 text_size=Size::Medium
                 plain_text=""
                 html_text=Some(
-                  html!{<>{"Shylock te ayuda a buscar las mejores subastas. Busca "}<BusinessAssets
-                    icon = BusinessIcon::Target
-                    fill = "#fff"
-                    size = ("30".to_string(),"30".to_string()) />
-                    {" para bienes que merezcan la pena."}
+                  html!{
+                    <>
+                      {"Shylock te ayuda a buscar las mejores subastas. Busca "}
+                      <BusinessAssets
+                        icon = BusinessIcon::Target
+                        fill = "#fff"
+                        size = ("30".to_string(),"30".to_string()) />
+                      {" para bienes que merezcan la pena."}
                     </>
                 }) />
             </Item>

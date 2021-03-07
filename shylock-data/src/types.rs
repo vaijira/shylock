@@ -1,3 +1,4 @@
+use crate::categories::PropertyCategory;
 use crate::concepts::BoeConcept;
 use crate::provinces::Province;
 
@@ -272,8 +273,8 @@ pub struct Property {
     pub bidinfo: Option<BidInfo>,
     /// Catastro reference.
     pub catastro_reference: String,
-    /// Category of the property (it should be real state).
-    pub category: String,
+    /// category, usually: industrial, garage or apartment.
+    pub category: PropertyCategory,
     /// If the property has any previous charges.
     pub charges: Decimal,
     /// City the asset is in.
@@ -292,8 +293,6 @@ pub struct Property {
     pub province: Province,
     /// Register inscription.
     pub register_inscription: String,
-    /// Subcategory, usually: industrial, garage or apartment.
-    pub subcategory: String,
     /// If someone can visit the property or not.
     pub visitable: String,
 }
@@ -304,8 +303,7 @@ impl Property {
     /// Create a new property asset.
     pub fn new(
         auction: &str,
-        category: &str,
-        subcategory: &str,
+        category: PropertyCategory,
         data: &HashMap<BoeConcept, String>,
     ) -> Property {
         let city = data
@@ -337,7 +335,7 @@ impl Property {
                 .get(&BoeConcept::CatastroReference)
                 .unwrap_or(&String::from(NOT_APPLICABLE))
                 .to_string(),
-            category: category.to_string(),
+            category,
             charges: get_decimal(data, &BoeConcept::Charges),
             city,
             coordinates: None,
@@ -356,7 +354,6 @@ impl Property {
                 .get(&BoeConcept::RegisterInscription)
                 .unwrap_or(&String::from(NOT_APPLICABLE))
                 .to_string(),
-            subcategory: subcategory.to_string(),
             visitable: data
                 .get(&BoeConcept::Visitable)
                 .unwrap_or(&String::from(NOT_APPLICABLE))
@@ -374,8 +371,6 @@ pub struct Vehicle {
     pub bidinfo: Option<BidInfo>,
     /// Vehicle brand.
     pub brand: String,
-    /// Category.
-    pub category: String,
     /// If vehicle has previous charges.
     pub charges: Decimal,
     /// Description.
@@ -398,12 +393,7 @@ pub struct Vehicle {
 
 impl Vehicle {
     /// Create a new vehicle asset.
-    pub fn new(
-        auction: &str,
-        category: &str,
-        subcategory: &str,
-        data: &HashMap<BoeConcept, String>,
-    ) -> Vehicle {
+    pub fn new(auction: &str, subcategory: &str, data: &HashMap<BoeConcept, String>) -> Vehicle {
         let bidinfo = if data.get(&BoeConcept::AuctionValue).is_some() {
             Some(BidInfo::new(data))
         } else {
@@ -416,7 +406,6 @@ impl Vehicle {
                 .get(&BoeConcept::Brand)
                 .unwrap_or(&String::from(NOT_APPLICABLE))
                 .to_string(),
-            category: category.to_string(),
             charges: get_decimal(data, &BoeConcept::Charges),
             description: get_clean_text(data, &BoeConcept::Description),
             frame_number: data
@@ -454,8 +443,6 @@ pub struct Other {
     pub auction_id: String,
     /// Bid info
     pub bidinfo: Option<BidInfo>,
-    /// Category.
-    pub category: String,
     /// If the asset has any previous charges.
     pub charges: Decimal,
     /// Description.
@@ -470,12 +457,7 @@ pub struct Other {
 
 impl Other {
     /// Create an asset that is not a vehicle or real state property.
-    pub fn new(
-        auction: &str,
-        category: &str,
-        subcategory: &str,
-        data: &HashMap<BoeConcept, String>,
-    ) -> Other {
+    pub fn new(auction: &str, subcategory: &str, data: &HashMap<BoeConcept, String>) -> Other {
         let bidinfo = if data.get(&BoeConcept::AuctionValue).is_some() {
             Some(BidInfo::new(data))
         } else {
@@ -488,7 +470,6 @@ impl Other {
                 .to_string(),
             auction_id: auction.to_string(),
             bidinfo,
-            category: category.to_string(),
             charges: get_decimal(data, &BoeConcept::Charges),
             description: get_clean_text(data, &BoeConcept::Description),
             judicial_title: data
@@ -537,9 +518,18 @@ impl Asset {
         let header = data.get(&BoeConcept::Header).unwrap().to_string();
         let (category, subcategory) = Asset::parse_header(&header);
         match &category[..] {
-            "INMUEBLE" => Asset::Property(Property::new(auction, &category, &subcategory, data)),
-            "VEHÍCULO" => Asset::Vehicle(Vehicle::new(auction, &category, &subcategory, data)),
-            _ => Asset::Other(Other::new(auction, &category, &subcategory, data)),
+            "INMUEBLE" => {
+                let property_category = match subcategory.parse::<PropertyCategory>() {
+                    Ok(cat) => cat,
+                    Err(err) => {
+                        log::error!("Unable to parse property category: {}", err);
+                        PropertyCategory::Apartment
+                    }
+                };
+                Asset::Property(Property::new(auction, property_category, data))
+            }
+            "VEHÍCULO" => Asset::Vehicle(Vehicle::new(auction, &subcategory, data)),
+            _ => Asset::Other(Other::new(auction, &subcategory, data)),
         }
     }
 }
@@ -775,7 +765,7 @@ mod tests {
             auction_id: id.to_string(),
             bidinfo: None,
             catastro_reference: String::from("4110202UM5141A0003HH"),
-            category: String::from("INMUEBLE"),
+            category: PropertyCategory::Apartment,
             charges: Decimal::new(0, DEFAULT_DECIMALS),
             city: String::from("VALLADOLID"),
             coordinates: None,
@@ -787,7 +777,6 @@ mod tests {
             primary_residence: String::from("SÍ"),
             province: Province::Valladolid,
             register_inscription: String::from("CONSTA EN EL EDICTO"),
-            subcategory: String::from("VIVIENDA"),
             visitable: String::from("NO CONSTA"),
         });
 
@@ -860,7 +849,7 @@ mod tests {
                 value: Decimal::new(15_100_00, DEFAULT_DECIMALS),
             }),
             catastro_reference: String::from("4110202UM5141A0003HH"),
-            category: String::from("INMUEBLE"),
+            category: PropertyCategory::Apartment,
             charges: Decimal::new(0, DEFAULT_DECIMALS),
             city: String::from("VALLADOLID"),
             coordinates: None,
@@ -872,7 +861,6 @@ mod tests {
             primary_residence: String::from("SÍ"),
             province: Province::Valladolid,
             register_inscription: String::from("CONSTA EN EL EDICTO"),
-            subcategory: String::from("VIVIENDA"),
             visitable: String::from("NO CONSTA"),
         });
 
@@ -936,7 +924,6 @@ mod tests {
                 value: Decimal::new(15_100_00, DEFAULT_DECIMALS),
             }),
             brand: String::from("AUDI"),
-            category: String::from("VEHÍCULO"),
             charges:  Decimal::new(0, DEFAULT_DECIMALS),
             description: String::from(
                 "VEHÍCULO MATRÍCULA 8868CXV, MARCA: AUDI, MODELO A4, Nº BASTIDOR / Nº CHASIS, EN SU CASO: WAUZZZ8E92A267004."
@@ -1002,7 +989,6 @@ mod tests {
                 minimum_bid: Decimal::new(0, DEFAULT_DECIMALS),
                 value: Decimal::new(15_100_00, DEFAULT_DECIMALS),
             }),
-            category: String::from("BIEN MUEBLE"),
             charges:  Decimal::new(1034754, DEFAULT_DECIMALS),
             description: String::from(
                 "CONCESION EXPENDEDURIA DE TABACO Y TIMBRE ALMONTE-1, CODIGO 210049, SITA EN LA C/ DEL OCIO 105 DE ALMONTE (HUELVA)"
