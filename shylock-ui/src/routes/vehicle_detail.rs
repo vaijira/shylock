@@ -58,6 +58,76 @@ impl Component for VehicleDetailPage {
                   <Text
                     text_type=TextType::Paragraph
                     text_size=Size::Medium
+                    plain_text="Marca:"
+                    html_text=None />
+                </Item>
+                <Item layouts=vec!(ItemLayout::ItXs(10))>
+                  <Text
+                    text_type=TextType::Paragraph
+                    text_size=Size::Medium
+                    plain_text=""
+                    html_text=html!{&vehicle.brand} />
+                </Item>
+                <Item layouts=vec!(ItemLayout::ItXs(2))>
+                  <Text
+                    text_type=TextType::Paragraph
+                    text_size=Size::Medium
+                    plain_text="Modelo:"
+                    html_text=None />
+                </Item>
+                <Item layouts=vec!(ItemLayout::ItXs(10))>
+                  <Text
+                    text_type=TextType::Paragraph
+                    text_size=Size::Medium
+                    plain_text=""
+                    html_text=html!{&vehicle.model} />
+                </Item>
+                <Item layouts=vec!(ItemLayout::ItXs(2))>
+                  <Text
+                    text_type=TextType::Paragraph
+                    text_size=Size::Medium
+                    plain_text="Matrícula:"
+                    html_text=None />
+                </Item>
+                <Item layouts=vec!(ItemLayout::ItXs(10))>
+                  <Text
+                    text_type=TextType::Paragraph
+                    text_size=Size::Medium
+                    plain_text=""
+                    html_text=html!{&vehicle.license_plate} />
+                </Item>
+                <Item layouts=vec!(ItemLayout::ItXs(2))>
+                  <Text
+                    text_type=TextType::Paragraph
+                    text_size=Size::Medium
+                    plain_text="Fecha matrícula:"
+                    html_text=None />
+                </Item>
+                <Item layouts=vec!(ItemLayout::ItXs(10))>
+                  <Text
+                    text_type=TextType::Paragraph
+                    text_size=Size::Medium
+                    plain_text=""
+                    html_text=html!{&vehicle.licensed_date} />
+                </Item>
+                <Item layouts=vec!(ItemLayout::ItXs(2))>
+                  <Text
+                    text_type=TextType::Paragraph
+                    text_size=Size::Medium
+                    plain_text="Localización:"
+                    html_text=None />
+                </Item>
+                <Item layouts=vec!(ItemLayout::ItXs(10))>
+                  <Text
+                    text_type=TextType::Paragraph
+                    text_size=Size::Medium
+                    plain_text=""
+                    html_text=html!{&vehicle.localization} />
+                </Item>
+                <Item layouts=vec!(ItemLayout::ItXs(2))>
+                  <Text
+                    text_type=TextType::Paragraph
+                    text_size=Size::Medium
                     plain_text="Valor subasta:"
                     html_text=None />
                 </Item>

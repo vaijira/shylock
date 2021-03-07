@@ -58,6 +58,20 @@ impl Component for OtherDetailPage {
                   <Text
                     text_type=TextType::Paragraph
                     text_size=Size::Medium
+                    plain_text="Información adicional:"
+                    html_text=None />
+                </Item>
+                <Item layouts=vec!(ItemLayout::ItXs(10))>
+                  <Text
+                    text_type=TextType::Paragraph
+                    text_size=Size::Medium
+                    plain_text=""
+                    html_text=html!{&other.additional_information} />
+                </Item>
+                <Item layouts=vec!(ItemLayout::ItXs(2))>
+                  <Text
+                    text_type=TextType::Paragraph
+                    text_size=Size::Medium
                     plain_text="Valor subasta:"
                     html_text=None />
                 </Item>
