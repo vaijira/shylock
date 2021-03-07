@@ -1,4 +1,4 @@
-use crate::categories::PropertyCategory;
+use crate::categories::{PropertyCategory, VehicleCategory};
 use crate::concepts::BoeConcept;
 use crate::provinces::Province;
 
@@ -371,6 +371,8 @@ pub struct Vehicle {
     pub bidinfo: Option<BidInfo>,
     /// Vehicle brand.
     pub brand: String,
+    /// vehicle category, usually: car, motorbike or industrial.
+    pub category: VehicleCategory,
     /// If vehicle has previous charges.
     pub charges: Decimal,
     /// Description.
@@ -385,15 +387,17 @@ pub struct Vehicle {
     pub localization: String,
     /// Model.
     pub model: String,
-    /// Subcategory, usually: car, motorbike or industrial.
-    pub subcategory: String,
     /// Indicates if someone can inspect the vehicle.
     pub visitable: String,
 }
 
 impl Vehicle {
     /// Create a new vehicle asset.
-    pub fn new(auction: &str, subcategory: &str, data: &HashMap<BoeConcept, String>) -> Vehicle {
+    pub fn new(
+        auction: &str,
+        category: VehicleCategory,
+        data: &HashMap<BoeConcept, String>,
+    ) -> Vehicle {
         let bidinfo = if data.get(&BoeConcept::AuctionValue).is_some() {
             Some(BidInfo::new(data))
         } else {
@@ -406,6 +410,7 @@ impl Vehicle {
                 .get(&BoeConcept::Brand)
                 .unwrap_or(&String::from(NOT_APPLICABLE))
                 .to_string(),
+            category,
             charges: get_decimal(data, &BoeConcept::Charges),
             description: get_clean_text(data, &BoeConcept::Description),
             frame_number: data
@@ -425,7 +430,6 @@ impl Vehicle {
                 .get(&BoeConcept::Model)
                 .unwrap_or(&String::from(NOT_APPLICABLE))
                 .to_string(),
-            subcategory: subcategory.to_string(),
             visitable: data
                 .get(&BoeConcept::Visitable)
                 .unwrap_or(&String::from(NOT_APPLICABLE))
@@ -522,13 +526,22 @@ impl Asset {
                 let property_category = match subcategory.parse::<PropertyCategory>() {
                     Ok(cat) => cat,
                     Err(err) => {
-                        log::error!("Unable to parse property category: {}", err);
+                        log::warn!("Unable to parse property category: {}", err);
                         PropertyCategory::Apartment
                     }
                 };
                 Asset::Property(Property::new(auction, property_category, data))
             }
-            "VEHÍCULO" => Asset::Vehicle(Vehicle::new(auction, &subcategory, data)),
+            "VEHÍCULO" => {
+                let vehicle_category = match subcategory.parse::<VehicleCategory>() {
+                    Ok(cat) => cat,
+                    Err(err) => {
+                        log::warn!("Unable to parse vehicle category: {}", err);
+                        VehicleCategory::Car
+                    }
+                };
+                Asset::Vehicle(Vehicle::new(auction, vehicle_category, data))
+            }
             _ => Asset::Other(Other::new(auction, &subcategory, data)),
         }
     }
@@ -924,6 +937,7 @@ mod tests {
                 value: Decimal::new(15_100_00, DEFAULT_DECIMALS),
             }),
             brand: String::from("AUDI"),
+            category: VehicleCategory::Car,
             charges:  Decimal::new(0, DEFAULT_DECIMALS),
             description: String::from(
                 "VEHÍCULO MATRÍCULA 8868CXV, MARCA: AUDI, MODELO A4, Nº BASTIDOR / Nº CHASIS, EN SU CASO: WAUZZZ8E92A267004."
@@ -933,7 +947,6 @@ mod tests {
             license_plate: String::from("8868CXV"),
             localization: String::from("AVDA. SUAREZ INCLAN, 11, PLAZA DE GARAJE 60 33100 - TRUBIA"),
             model: String::from("A4"),
-            subcategory: String::from("TURISMOS"),
             visitable: String::from("SÍ"),
         });
 

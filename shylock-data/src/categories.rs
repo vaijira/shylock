@@ -47,7 +47,7 @@ macro_rules! property_categories {
 
             #[inline]
             fn from_str(s: &str) -> Result<Self, Self::Err> {
-                let province: String = s.to_uppercase()
+                let category: String = s.to_uppercase()
                    .replace(" ", "")
                    .chars()
                    .map(|x| match x {
@@ -59,7 +59,7 @@ macro_rules! property_categories {
                         _ => x,
                     }).collect();
 
-                match &province[..] {
+                match &category[..] {
                     $(
                     $name => Ok(PropertyCategory::$konst) ,
                     )+
@@ -72,11 +72,11 @@ macro_rules! property_categories {
         impl PropertyCategory {
             /// Returns the string representation for this province
             pub fn name(&self) -> &str {
-                CATEGORIES.get(self).unwrap_or(&"Unknown")
+                PROPERTY_CATEGORIES.get(self).unwrap_or(&"Unknown")
             }
         }
 
-        static CATEGORIES: Lazy<HashMap<PropertyCategory, &str>> = Lazy::new(|| {
+        static PROPERTY_CATEGORIES: Lazy<HashMap<PropertyCategory, &str>> = Lazy::new(|| {
             let mut categories: HashMap<PropertyCategory, &str> = HashMap::new();
 
             $(
@@ -87,7 +87,7 @@ macro_rules! property_categories {
         });
 
         #[cfg(test)]
-        const TEST_CATEGORIES: &'static [(PropertyCategory, &'static str, &'static str)] = &[
+        const TEST_PROPERTY_CATEGORIES: &'static [(PropertyCategory, &'static str, &'static str)] = &[
             $(
             (PropertyCategory::$konst, $name, $display),
             )+
@@ -95,7 +95,7 @@ macro_rules! property_categories {
 
         #[test]
         fn test_parse_property_category() {
-            for &(std, name, _) in TEST_CATEGORIES {
+            for &(std, name, _) in TEST_PROPERTY_CATEGORIES {
                 // Test upper case
                 assert_eq!(name.parse::<PropertyCategory>().unwrap(), std);
 
@@ -106,7 +106,7 @@ macro_rules! property_categories {
 
         #[test]
         fn test_property_category_name() {
-            for &(std, _, display) in TEST_CATEGORIES {
+            for &(std, _, display) in TEST_PROPERTY_CATEGORIES {
                 assert_eq!(std.name(), display);
             }
         }
@@ -140,6 +140,113 @@ property_categories! {
 
     /// Storage room
     (StorageRoom, "TRASTERO", "Trastero");
+
+    /// Unkown
+    (Unknown, "UNKNOWN", "Desconocido");
+
+    /// All
+    (All, "ALL", "All");
+}
+
+macro_rules! vehicle_categories {
+    (
+        $(
+            $(#[$docs:meta])*
+            ($konst:ident, $name:expr, $display:expr);
+        )+
+    ) => {
+        /// Type of provinces
+        #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize)]
+        pub enum VehicleCategory {
+            $(
+                $(#[$docs])*
+                $konst,
+            )+
+        }
+
+        impl FromStr for VehicleCategory {
+            type Err = InvalidCategory;
+
+            #[inline]
+            fn from_str(s: &str) -> Result<Self, Self::Err> {
+                let category: String = s.to_uppercase()
+                   .replace(" ", "")
+                   .chars()
+                   .map(|x| match x {
+                        'Á' => 'A',
+                        'É' => 'E',
+                        'Í' => 'I',
+                        'Ó' => 'O',
+                        'Ú' => 'U',
+                        _ => x,
+                    }).collect();
+
+                match &category[..] {
+                    $(
+                    $name => Ok(VehicleCategory::$konst) ,
+                    )+
+                    "" => Ok(VehicleCategory::Car),
+                    _ => Err(InvalidCategory::new(s)),
+                }
+            }
+        }
+
+        impl VehicleCategory {
+            /// Returns the string representation for this province
+            pub fn name(&self) -> &str {
+                VEHICLE_CATEGORIES.get(self).unwrap_or(&"Unknown")
+            }
+        }
+
+        static VEHICLE_CATEGORIES: Lazy<HashMap<VehicleCategory, &str>> = Lazy::new(|| {
+            let mut categories: HashMap<VehicleCategory, &str> = HashMap::new();
+
+            $(
+                categories.insert(VehicleCategory::$konst, $display);
+            )+
+
+            categories
+        });
+
+        #[cfg(test)]
+        const TEST_VEHICLE_CATEGORIES: &'static [(VehicleCategory, &'static str, &'static str)] = &[
+            $(
+            (VehicleCategory::$konst, $name, $display),
+            )+
+        ];
+
+        #[test]
+        fn test_parse_vehicle_category() {
+            for &(std, name, _) in TEST_VEHICLE_CATEGORIES {
+                // Test upper case
+                assert_eq!(name.parse::<VehicleCategory>().unwrap(), std);
+
+                // Test lower case
+                assert_eq!(name.to_lowercase().parse::<VehicleCategory>().unwrap(), std);
+            }
+        }
+
+        #[test]
+        fn test_vehicle_category_name() {
+            for &(std, _, display) in TEST_VEHICLE_CATEGORIES {
+                assert_eq!(std.name(), display);
+            }
+        }
+
+        #[test]
+        fn test_parse_invalid_vehicle_category() {
+            let invalid_category = "non-sense";
+            assert_eq!(invalid_category.parse::<VehicleCategory>(), Err(InvalidCategory::new(invalid_category)));
+        }
+    }
+}
+
+vehicle_categories! {
+    /// Car
+    (Car, "TURISMOS", "Turismo");
+
+    /// Industrial vehicle
+    (Industrial, "INDUSTRIALES", "Vehículo industrial");
 
     /// Unkown
     (Unknown, "UNKNOWN", "Desconocido");
