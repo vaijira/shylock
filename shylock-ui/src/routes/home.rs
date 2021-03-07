@@ -1,4 +1,5 @@
 use yew::prelude::*;
+use yew_assets::business_assets::{BusinessAssets, BusinessIcon};
 use yew_styles::layouts::{
     container::{Container, Direction, Wrap},
     item::{Item, ItemLayout},
@@ -34,12 +35,20 @@ impl Component for HomePage {
     fn view(&self) -> Html {
         html! {
           <Container direction=Direction::Row wrap=Wrap::Wrap>
-            <Item layouts=vec!(ItemLayout::ItXs(4))>
+            <Item layouts=vec!(ItemLayout::ItXs(12))>
+
               <Text
                 text_type=TextType::Paragraph
                 text_size=Size::Medium
-                plain_text="Shylock te ayuda a encontrar tus mejores subastas"
-                html_text=None />
+                plain_text=""
+                html_text=Some(
+                  html!{<>{"Shylock te ayuda a buscar las mejores subastas. Busca "}<BusinessAssets
+                    icon = BusinessIcon::Target
+                    fill = "#fff"
+                    size = ("30".to_string(),"30".to_string()) />
+                    {" para bienes que merezcan la pena."}
+                    </>
+                }) />
             </Item>
           </Container>
         }

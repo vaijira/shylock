@@ -1,9 +1,11 @@
 use crate::global::{format_valuation, get_bidinfo, summarize};
 use crate::route::AppRoute;
+use rust_decimal::prelude::ToPrimitive;
 use yew_router::agent::{RouteAgentDispatcher, RouteRequest};
 
-use shylock_data::types::Asset;
+use shylock_data::{types::Asset, Property};
 use yew::prelude::*;
+use yew_assets::business_assets::{BusinessAssets, BusinessIcon};
 use yew_styles::card::Card;
 use yew_styles::styles::{Palette, Size, Style};
 use yewtil::NeqAssign;
@@ -73,7 +75,7 @@ impl Component for AssetView {
                       card_style=Style::Outline
                       class_name="pointer"
                       onclick_signal=self.link.callback(Msg::PropertyClicked)
-                      header=Some(html!{<>{&property.city}{" "}{&property.province.name()}</>})
+                      header=Some(self.get_property_header(property))
                       body=Some(html!{<div>{summarize(&property.description)}</div>})
                       footer=Some(html!{<div><b>{format_valuation(&get_bidinfo(&property.bidinfo, &property.auction_id).value)}{" €"}</b></div>}) />
                 }
@@ -108,8 +110,29 @@ impl Component for AssetView {
             }
         }
     }
+}
 
-    fn rendered(&mut self, _first_render: bool) {}
+impl AssetView {
+    fn get_property_header(&self, property: &Property) -> Html {
+        let bidinfo = get_bidinfo(&property.bidinfo, &property.auction_id);
+        let target_value = &bidinfo.value.to_f64().or(Some(0.0)).unwrap() * 0.7;
 
-    fn destroy(&mut self) {}
+        if target_value > bidinfo.claim_quantity.to_f64().or(Some(0.0)).unwrap() {
+            html! {
+                <>
+                <BusinessAssets
+                  icon = BusinessIcon::Target
+                  fill = "#fff"
+                  size = ("30".to_string(),"30".to_string()) />
+                  {" "}{&property.city}{" "}{&property.province.name()}
+                </>
+            }
+        } else {
+            html! {
+                <>
+                {&property.city}{" "}{&property.province.name()}
+                </>
+            }
+        }
+    }
 }
