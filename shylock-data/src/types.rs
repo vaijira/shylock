@@ -1,4 +1,4 @@
-use crate::categories::{PropertyCategory, VehicleCategory};
+use crate::categories::{OtherCategory, PropertyCategory, VehicleCategory};
 use crate::concepts::BoeConcept;
 use crate::provinces::Province;
 
@@ -447,21 +447,25 @@ pub struct Other {
     pub auction_id: String,
     /// Bid info
     pub bidinfo: Option<BidInfo>,
+    /// Other category.
+    pub category: OtherCategory,
     /// If the asset has any previous charges.
     pub charges: Decimal,
     /// Description.
     pub description: String,
     /// Type of judicial title if applies.
     pub judicial_title: String,
-    /// Subcategory.
-    pub subcategory: String,
     /// If someone can visit the asset if applies.
     pub visitable: String,
 }
 
 impl Other {
     /// Create an asset that is not a vehicle or real state property.
-    pub fn new(auction: &str, subcategory: &str, data: &HashMap<BoeConcept, String>) -> Other {
+    pub fn new(
+        auction: &str,
+        category: OtherCategory,
+        data: &HashMap<BoeConcept, String>,
+    ) -> Other {
         let bidinfo = if data.get(&BoeConcept::AuctionValue).is_some() {
             Some(BidInfo::new(data))
         } else {
@@ -474,13 +478,13 @@ impl Other {
                 .to_string(),
             auction_id: auction.to_string(),
             bidinfo,
+            category,
             charges: get_decimal(data, &BoeConcept::Charges),
             description: get_clean_text(data, &BoeConcept::Description),
             judicial_title: data
                 .get(&BoeConcept::JudicialTitle)
                 .unwrap_or(&String::from(NOT_APPLICABLE))
                 .to_string(),
-            subcategory: subcategory.to_string(),
             visitable: data
                 .get(&BoeConcept::Visitable)
                 .unwrap_or(&String::from(NOT_APPLICABLE))
@@ -542,7 +546,16 @@ impl Asset {
                 };
                 Asset::Vehicle(Vehicle::new(auction, vehicle_category, data))
             }
-            _ => Asset::Other(Other::new(auction, &subcategory, data)),
+            _ => {
+                let other_category = match subcategory.parse::<OtherCategory>() {
+                    Ok(cat) => cat,
+                    Err(err) => {
+                        log::warn!("Unable to parse other category: {}", err);
+                        OtherCategory::Other
+                    }
+                };
+                Asset::Other(Other::new(auction, other_category, data))
+            }
         }
     }
 }
@@ -1002,12 +1015,12 @@ mod tests {
                 minimum_bid: Decimal::new(0, DEFAULT_DECIMALS),
                 value: Decimal::new(15_100_00, DEFAULT_DECIMALS),
             }),
+            category: OtherCategory::OtherRights,
             charges:  Decimal::new(1034754, DEFAULT_DECIMALS),
             description: String::from(
                 "CONCESION EXPENDEDURIA DE TABACO Y TIMBRE ALMONTE-1, CODIGO 210049, SITA EN LA C/ DEL OCIO 105 DE ALMONTE (HUELVA)"
               ),
             judicial_title: String::from("OTROS DERECHOS"),
-            subcategory: String::from("OTROS BIENES Y DERECHOS"),
             visitable: String::from("SÍ"),
         });
 

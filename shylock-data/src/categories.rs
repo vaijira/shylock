@@ -254,3 +254,122 @@ vehicle_categories! {
     /// All
     (All, "ALL", "All");
 }
+
+macro_rules! other_categories {
+    (
+        $(
+            $(#[$docs:meta])*
+            ($konst:ident, $name:expr, $display:expr);
+        )+
+    ) => {
+        /// Type of provinces
+        #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize)]
+        pub enum OtherCategory {
+            $(
+                $(#[$docs])*
+                $konst,
+            )+
+        }
+
+        impl FromStr for OtherCategory {
+            type Err = InvalidCategory;
+
+            #[inline]
+            fn from_str(s: &str) -> Result<Self, Self::Err> {
+                let category: String = s.to_uppercase()
+                   .replace(" ", "")
+                   .chars()
+                   .map(|x| match x {
+                        'Á' => 'A',
+                        'É' => 'E',
+                        'Í' => 'I',
+                        'Ó' => 'O',
+                        'Ú' => 'U',
+                        _ => x,
+                    }).collect();
+
+                match &category[..] {
+                    $(
+                    $name => Ok(OtherCategory::$konst) ,
+                    )+
+                    "" => Ok(OtherCategory::Other),
+                    _ => Err(InvalidCategory::new(s)),
+                }
+            }
+        }
+
+        impl OtherCategory {
+            /// Returns the string representation for this province
+            pub fn name(&self) -> &str {
+                OTHER_CATEGORIES.get(self).unwrap_or(&"Unknown")
+            }
+        }
+
+        static OTHER_CATEGORIES: Lazy<HashMap<OtherCategory, &str>> = Lazy::new(|| {
+            let mut categories: HashMap<OtherCategory, &str> = HashMap::new();
+
+            $(
+                categories.insert(OtherCategory::$konst, $display);
+            )+
+
+            categories
+        });
+
+        #[cfg(test)]
+        const TEST_OTHER_CATEGORIES: &'static [(OtherCategory, &'static str, &'static str)] = &[
+            $(
+            (OtherCategory::$konst, $name, $display),
+            )+
+        ];
+
+        #[test]
+        fn test_parse_other_category() {
+            for &(std, name, _) in TEST_OTHER_CATEGORIES {
+                // Test upper case
+                assert_eq!(name.parse::<OtherCategory>().unwrap(), std);
+
+                // Test lower case
+                assert_eq!(name.to_lowercase().parse::<OtherCategory>().unwrap(), std);
+            }
+        }
+
+        #[test]
+        fn test_vehicle_other_name() {
+            for &(std, _, display) in TEST_OTHER_CATEGORIES {
+                assert_eq!(std.name(), display);
+            }
+        }
+
+        #[test]
+        fn test_parse_invalid_other_category() {
+            let invalid_category = "non-sense";
+            assert_eq!(invalid_category.parse::<OtherCategory>(), Err(InvalidCategory::new(invalid_category)));
+        }
+    }
+}
+
+other_categories! {
+    /// Antiques
+    (Antiques, "JOYAS,OBRASDEARTEYANTIGÜEDADES", "Joyas, obras de arte y antigüedades");
+
+    /// Other
+    (Other, "OTROS", "Otros");
+
+    /// Other rights
+    (OtherRights, "OTROSBIENESYDERECHOS", "Otros bienes y derechos");
+
+    /// Plants
+    (Plant, "INSTALACIONES", "Instalación");
+
+    /// Tools
+    (Tools, "UTENSILIOSYHERRAMIENTAS", "Utensilios y herramientas");
+
+    /// Vessels
+    (Vessel, "BUQUES", "Buque");
+
+    /// Unkown
+    (Unknown, "UNKNOWN", "Desconocido");
+
+    /// All
+    (All, "ALL", "All");
+}
