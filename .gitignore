@@ -1,4 +1,7 @@
 shylock*/target
+shylock*/debug
+shylock*/dist
+shylock*/tmp
 shylock*/Cargo.lock
 /target
 Cargo.lock

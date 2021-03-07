@@ -32,10 +32,7 @@ fn parse_html_table(
             .text()
             .collect::<String>();
 
-        result.insert(
-            th.trim().parse::<BoeConcept>()?,
-            td.trim().to_uppercase().to_owned(),
-        );
+        result.insert(th.trim().parse::<BoeConcept>()?, td.trim().to_owned());
     }
 
     Ok(result)
@@ -307,7 +304,7 @@ mod tests {
         let lot: HashMap<BoeConcept, String> = [
             (BoeConcept::AuctionValue, String::from("15.100,00 €")),
             (BoeConcept::DepositAmount, String::from("755,00 €")),
-            (BoeConcept::MinimumBid, String::from("SIN PUJA MÍNIMA")),
+            (BoeConcept::MinimumBid, String::from("Sin puja mínima")),
             (BoeConcept::BidStep, String::from("302,00 €")),
             (
                 BoeConcept::Header,
@@ -323,9 +320,9 @@ mod tests {
             ),
             (BoeConcept::PostalCode, String::from("26007")),
             (BoeConcept::City, String::from("LOGROÑO")),
-            (BoeConcept::Province, String::from("LA RIOJA")),
-            (BoeConcept::OwnerStatus, String::from("NO CONSTA")),
-            (BoeConcept::Visitable, String::from("NO CONSTA")),
+            (BoeConcept::Province, String::from("La Rioja")),
+            (BoeConcept::OwnerStatus, String::from("No consta")),
+            (BoeConcept::Visitable, String::from("No consta")),
         ]
         .iter()
         .cloned()
@@ -503,19 +500,19 @@ mod tests {
       (BoeConcept::City, String::from("VALLADOLID")),
       (
         BoeConcept::Province,
-        String::from("VALLADOLID"),
+        String::from("Valladolid"),
       ),
       (
         BoeConcept::PrimaryResidence,
-        String::from("SÍ"),
+        String::from("Sí"),
       ),
       (
         BoeConcept::OwnerStatus,
-        String::from("NO CONSTA"),
+        String::from("No consta"),
       ),
       (
         BoeConcept::Visitable,
-        String::from("NO CONSTA"),
+        String::from("No consta"),
       ),
       (
         BoeConcept::RegisterInscription,
@@ -566,7 +563,7 @@ mod tests {
             (BoeConcept::Code, String::from("3003000230")),
             (
                 BoeConcept::Description,
-                String::from("UNIDAD SUBASTAS JUDICIALES MURCIA (MINISTERIO DE JUSTICIA)"),
+                String::from("UNIDAD SUBASTAS JUDICIALES MURCIA (Ministerio de Justicia)"),
             ),
             (
                 BoeConcept::Address,
@@ -576,7 +573,7 @@ mod tests {
             (BoeConcept::Fax, String::from("-")),
             (
                 BoeConcept::Email,
-                String::from("SUBASTAS.MURCIA@JUSTICIA.ES"),
+                String::from("subastas.murcia@justicia.es"),
             ),
         ]
         .iter()
@@ -663,12 +660,12 @@ mod tests {
                 String::from("03-08-2020 18:00:00 CET  (ISO: 2020-08-03T18:00:00+02:00)"),
             ),
             (BoeConcept::ClaimQuantity, String::from("81.971,57 €")),
-            (BoeConcept::Lots, String::from("SIN LOTES")),
+            (BoeConcept::Lots, String::from("Sin lotes")),
             (BoeConcept::Notice, String::from("BOE-B-2020-21708")),
             (BoeConcept::AuctionValue, String::from("75.127,00 €")),
             (BoeConcept::Appraisal, String::from("75.127,00 €")),
-            (BoeConcept::MinimumBid, String::from("SIN PUJA MÍNIMA")),
-            (BoeConcept::BidStep, String::from("SIN TRAMOS")),
+            (BoeConcept::MinimumBid, String::from("Sin puja mínima")),
+            (BoeConcept::BidStep, String::from("Sin tramos")),
             (BoeConcept::DepositAmount, String::from("3.756,35 €")),
         ]
         .iter()
