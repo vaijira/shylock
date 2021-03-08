@@ -1,9 +1,8 @@
-use crate::global::{format_valuation, get_bidinfo, summarize};
 use crate::route::AppRoute;
-use rust_decimal::prelude::ToPrimitive;
+use crate::utils::{format_valuation, get_bidinfo, is_targeted_asset, summarize};
 use yew_router::agent::{RouteAgentDispatcher, RouteRequest};
 
-use shylock_data::{types::Asset, Property};
+use shylock_data::{types::Asset, Other, Property, Vehicle};
 use yew::prelude::*;
 use yew_assets::business_assets::{BusinessAssets, BusinessIcon};
 use yew_styles::card::Card;
@@ -89,7 +88,7 @@ impl Component for AssetView {
                     card_style=Style::Outline
                     class_name="pointer"
                     onclick_signal=self.link.callback(Msg::VehicleClicked)
-                    header=Some(html!{<div>{"Vehículo"}</div>})
+                    header=Some(self.get_vehicle_header(vehicle))
                     body=Some(html!{<div>{summarize(&vehicle.description)}</div>})
                     footer=Some(html!{<div><b>{format_valuation(&get_bidinfo(&vehicle.bidinfo, &vehicle.auction_id).value)}{" €"}</b></div>}) />
                 }
@@ -103,7 +102,7 @@ impl Component for AssetView {
                     card_style=Style::Outline
                     class_name="pointer"
                     onclick_signal=self.link.callback(Msg::OtherClicked)
-                    header=Some(html!{<div>{"Bien"}</div>})
+                    header=Some(self.get_other_header(other))
                     body=Some(html!{<div>{summarize(&other.description)}</div>})
                     footer=Some(html!{<div><b>{format_valuation(&get_bidinfo(&other.bidinfo, &other.auction_id).value)}{" €"}</b></div>}) />
                 }
@@ -114,23 +113,60 @@ impl Component for AssetView {
 
 impl AssetView {
     fn get_property_header(&self, property: &Property) -> Html {
-        let bidinfo = get_bidinfo(&property.bidinfo, &property.auction_id);
-        let target_value = &bidinfo.value.to_f64().or(Some(0.0)).unwrap() * 0.7;
-
-        if target_value > bidinfo.claim_quantity.to_f64().or(Some(0.0)).unwrap() {
+        if is_targeted_asset(&property.bidinfo, &property.auction_id) {
             html! {
                 <>
-                <BusinessAssets
-                  icon = BusinessIcon::Target
-                  fill = "#fff"
-                  size = ("30".to_string(),"30".to_string()) />
-                  {" "}{&property.city}{" "}{&property.province.name()}
+                  <BusinessAssets
+                    icon = BusinessIcon::Target
+                    fill = "#fff"
+                    size = ("30".to_string(),"30".to_string()) />
+                  {" "}{&property.city}{" "}{&property.province.name()}{" "}
                 </>
             }
         } else {
             html! {
                 <>
-                {&property.city}{" "}{&property.province.name()}
+                {&property.city}{" "}{&property.province.name()}{" "}
+                </>
+            }
+        }
+    }
+
+    fn get_vehicle_header(&self, vehicle: &Vehicle) -> Html {
+        if is_targeted_asset(&vehicle.bidinfo, &vehicle.auction_id) {
+            html! {
+                <>
+                  <BusinessAssets
+                    icon = BusinessIcon::Target
+                    fill = "#fff"
+                    size = ("30".to_string(),"30".to_string()) />
+                  {" "}{&vehicle.model}{" "}{&vehicle.brand}{" "}
+                </>
+            }
+        } else {
+            html! {
+                <>
+                {&vehicle.model}{" "}{&vehicle.brand}{" "}
+                </>
+            }
+        }
+    }
+
+    fn get_other_header(&self, other: &Other) -> Html {
+        if is_targeted_asset(&other.bidinfo, &other.auction_id) {
+            html! {
+                <>
+                  <BusinessAssets
+                    icon = BusinessIcon::Target
+                    fill = "#fff"
+                    size = ("30".to_string(),"30".to_string()) />
+                  {" "}{&other.category.name()}{" "}
+                </>
+            }
+        } else {
+            html! {
+                <>
+                {&other.category.name()}{" "}
                 </>
             }
         }

@@ -28,8 +28,8 @@ impl Component for PageNotFound {
     fn view(&self) -> Html {
         html! {
           <section>
-            <h1 class="title">{"Página no encontrada"}</h1>
-            <h2 class="subtitle">{"Está página no parece existir"}</h2>
+            <h1>{"Página no encontrada"}</h1>
+            <h2>{"Está página no parece existir"}</h2>
           </section>
         }
     }

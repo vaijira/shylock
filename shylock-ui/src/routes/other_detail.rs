@@ -1,7 +1,9 @@
-use crate::global::{format_valuation, get_bidinfo, ASSETS};
+use crate::global::ASSETS;
+use crate::utils::{format_valuation, get_bidinfo, get_external_url};
 
 use shylock_data::types::Asset;
 use yew::prelude::*;
+use yew_assets::nav_assets::{NavAssets, NavIcon};
 use yew_styles::layouts::{
     container::{Container, Direction, Wrap},
     item::{Item, ItemLayout},
@@ -40,6 +42,16 @@ impl Component for OtherDetailPage {
         if let Some(Asset::Other(other)) = asset {
             html! {
               <Container direction=Direction::Row wrap=Wrap::Wrap>
+                <Item layouts=vec!(ItemLayout::ItXs(12))>
+                  <a href={get_external_url(&other.auction_id)}
+                    alt="enlace del bien en subastas BOE"
+                    target="_blank">
+                    <NavAssets
+                      icon = NavIcon::ExternalLink
+                      fill = "#fff"
+                      size = ("30".to_string(),"30".to_string()) />
+                  </a>
+                </Item>
                 <Item layouts=vec!(ItemLayout::ItXs(2))>
                   <Text
                     text_type=TextType::Paragraph
