@@ -135,6 +135,9 @@ property_categories! {
     /// Industrial estate
     (IndustrialState, "NAVEINDUSTRIAL", "Nave industrial");
 
+    /// Other
+    (Other, "OTROS", "Otros");
+
     /// Rustica estate
     (RusticState, "FINCARUSTICA", "Finca rústica");
 
@@ -248,6 +251,9 @@ vehicle_categories! {
     /// Industrial vehicle
     (Industrial, "INDUSTRIALES", "Vehículo industrial");
 
+    /// Other
+    (Other, "OTROS", "Otros");
+
     /// Unkown
     (Unknown, "UNKNOWN", "Desconocido");
 
@@ -351,6 +357,12 @@ macro_rules! other_categories {
 other_categories! {
     /// Antiques
     (Antiques, "JOYAS,OBRASDEARTEYANTIGÜEDADES", "Joyas, obras de arte y antigüedades");
+
+    /// Furniture
+    (Furniture, "MOBILIARIO", "Mobiliario");
+
+    /// Machinery
+    (Machinery, "MAQUINARIA", "Maquinaria");
 
     /// Other
     (Other, "OTROS", "Otros");
