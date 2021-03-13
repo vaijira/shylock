@@ -11,6 +11,9 @@ pub static MAX_AUCTION_VALUE: OnceCell<Decimal> = OnceCell::new();
 pub static PROVINCES: OnceCell<BTreeSet<Province>> = OnceCell::new();
 pub static CITIES: OnceCell<BTreeSet<&str>> = OnceCell::new();
 
+pub const DEFAULT_UX_ASSET_SIZE: &str = "25";
+pub const DEFAULT_UX_ASSET_COLOR: &str = "#FFFFFF";
+
 pub(crate) fn set_global_info() {
     let max_auctions = AUCTIONS
         .get()

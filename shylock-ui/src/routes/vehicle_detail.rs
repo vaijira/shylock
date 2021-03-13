@@ -1,4 +1,4 @@
-use crate::global::ASSETS;
+use crate::global::{ASSETS, DEFAULT_UX_ASSET_COLOR, DEFAULT_UX_ASSET_SIZE};
 use crate::utils::{format_valuation, get_bidinfo, get_external_url};
 
 use shylock_data::types::Asset;
@@ -42,139 +42,147 @@ impl Component for VehicleDetailPage {
         if let Some(Asset::Vehicle(vehicle)) = asset {
             html! {
               <Container direction=Direction::Row wrap=Wrap::Wrap>
-                <Item layouts=vec!(ItemLayout::ItXs(12))>
+                <Item layouts=vec!(ItemLayout::ItXs(2))>
+                  <Text
+                    text_type=TextType::Plain
+                    text_size=Size::Small
+                    plain_text="Id subasta:"
+                    html_text=None />
+                </Item>
+                <Item layouts=vec!(ItemLayout::ItXs(10))>
                   <a href={get_external_url(&vehicle.auction_id)}
-                    alt="enlace del bien en subastas BOE"
+                    alt="enlace a subastas BOE"
                     target="_blank">
+                    {&vehicle.auction_id}{" "}
                     <NavAssets
-                      icon = NavIcon::ExternalLink
-                      fill = "#fff"
-                      size = ("30".to_string(),"30".to_string()) />
+                      icon=NavIcon::ExternalLink
+                      fill=DEFAULT_UX_ASSET_COLOR
+                      size=(DEFAULT_UX_ASSET_SIZE.to_string(), DEFAULT_UX_ASSET_SIZE.to_string()) />
                   </a>
                 </Item>
                 <Item layouts=vec!(ItemLayout::ItXs(2))>
                   <Text
-                    text_type=TextType::Paragraph
-                    text_size=Size::Medium
+                    text_type=TextType::Plain
+                    text_size=Size::Small
                     plain_text="Descripción:"
                     html_text=None />
                 </Item>
                 <Item layouts=vec!(ItemLayout::ItXs(10))>
                   <Text
-                    text_type=TextType::Paragraph
-                    text_size=Size::Medium
+                    text_type=TextType::Plain
+                    text_size=Size::Small
                     plain_text=""
                     html_text=html!{&vehicle.description} />
                 </Item>
                 <Item layouts=vec!(ItemLayout::ItXs(2))>
                   <Text
-                    text_type=TextType::Paragraph
-                    text_size=Size::Medium
+                    text_type=TextType::Plain
+                    text_size=Size::Small
                     plain_text="Marca:"
                     html_text=None />
                 </Item>
                 <Item layouts=vec!(ItemLayout::ItXs(10))>
                   <Text
-                    text_type=TextType::Paragraph
-                    text_size=Size::Medium
+                    text_type=TextType::Plain
+                    text_size=Size::Small
                     plain_text=""
                     html_text=html!{&vehicle.brand} />
                 </Item>
                 <Item layouts=vec!(ItemLayout::ItXs(2))>
                   <Text
-                    text_type=TextType::Paragraph
-                    text_size=Size::Medium
+                    text_type=TextType::Plain
+                    text_size=Size::Small
                     plain_text="Modelo:"
                     html_text=None />
                 </Item>
                 <Item layouts=vec!(ItemLayout::ItXs(10))>
                   <Text
-                    text_type=TextType::Paragraph
-                    text_size=Size::Medium
+                    text_type=TextType::Plain
+                    text_size=Size::Small
                     plain_text=""
                     html_text=html!{&vehicle.model} />
                 </Item>
                 <Item layouts=vec!(ItemLayout::ItXs(2))>
                   <Text
-                    text_type=TextType::Paragraph
-                    text_size=Size::Medium
+                    text_type=TextType::Plain
+                    text_size=Size::Small
                     plain_text="Matrícula:"
                     html_text=None />
                 </Item>
                 <Item layouts=vec!(ItemLayout::ItXs(10))>
                   <Text
-                    text_type=TextType::Paragraph
-                    text_size=Size::Medium
+                    text_type=TextType::Plain
+                    text_size=Size::Small
                     plain_text=""
                     html_text=html!{&vehicle.license_plate} />
                 </Item>
                 <Item layouts=vec!(ItemLayout::ItXs(2))>
                   <Text
-                    text_type=TextType::Paragraph
-                    text_size=Size::Medium
+                    text_type=TextType::Plain
+                    text_size=Size::Small
                     plain_text="Fecha matrícula:"
                     html_text=None />
                 </Item>
                 <Item layouts=vec!(ItemLayout::ItXs(10))>
                   <Text
-                    text_type=TextType::Paragraph
-                    text_size=Size::Medium
+                    text_type=TextType::Plain
+                    text_size=Size::Small
                     plain_text=""
                     html_text=html!{&vehicle.licensed_date} />
                 </Item>
                 <Item layouts=vec!(ItemLayout::ItXs(2))>
                   <Text
-                    text_type=TextType::Paragraph
-                    text_size=Size::Medium
+                    text_type=TextType::Plain
+                    text_size=Size::Small
                     plain_text="Localización:"
                     html_text=None />
                 </Item>
                 <Item layouts=vec!(ItemLayout::ItXs(10))>
                   <Text
-                    text_type=TextType::Paragraph
-                    text_size=Size::Medium
+                    text_type=TextType::Plain
+                    text_size=Size::Small
                     plain_text=""
                     html_text=html!{&vehicle.localization} />
                 </Item>
                 <Item layouts=vec!(ItemLayout::ItXs(2))>
                   <Text
-                    text_type=TextType::Paragraph
-                    text_size=Size::Medium
+                    text_type=TextType::Plain
+                    text_size=Size::Small
                     plain_text="Valor subasta:"
                     html_text=None />
                 </Item>
                 <Item layouts=vec!(ItemLayout::ItXs(10))>
                   <Text
-                    text_type=TextType::Paragraph
-                    text_size=Size::Medium
+                    text_type=TextType::Plain
+                    text_size=Size::Small
                     plain_text=""
                     html_text=html!{<>{format_valuation(&get_bidinfo(&vehicle.bidinfo, &vehicle.auction_id).value)}{" €"}</>} />
                 </Item>
                 <Item layouts=vec!(ItemLayout::ItXs(2))>
                   <Text
-                    text_type=TextType::Paragraph
-                    text_size=Size::Medium
+                    text_type=TextType::Plain
+                    text_size=Size::Small
                     plain_text="Cantidad reclamada:"
                     html_text=None />
                 </Item>
                 <Item layouts=vec!(ItemLayout::ItXs(10))>
                   <Text
-                    text_type=TextType::Paragraph
-                    text_size=Size::Medium
+                    text_type=TextType::Plain
+                    text_size=Size::Small
                     plain_text=""
                     html_text=html!{<>{format_valuation(&get_bidinfo(&vehicle.bidinfo, &vehicle.auction_id).claim_quantity)}{" €"}</>} />
                 </Item>
                 <Item layouts=vec!(ItemLayout::ItXs(2))>
                   <Text
-                    text_type=TextType::Paragraph
-                    text_size=Size::Medium
+                    text_type=TextType::Plain
+                    text_size=Size::Small
                     plain_text="Valor tasación:"
                     html_text=None />
                 </Item>
                 <Item layouts=vec!(ItemLayout::ItXs(10))>
                   <Text
-                    text_type=TextType::Paragraph
-                    text_size=Size::Medium
+                    text_type=TextType::Plain
+                    text_size=Size::Small
                     plain_text=""
                     html_text=html!{<>{format_valuation(&get_bidinfo(&vehicle.bidinfo, &vehicle.auction_id).appraisal)}{" €"}</>} />
                 </Item>

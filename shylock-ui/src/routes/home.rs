@@ -1,3 +1,5 @@
+use crate::global::{DEFAULT_UX_ASSET_COLOR, DEFAULT_UX_ASSET_SIZE};
+
 use yew::prelude::*;
 use yew_assets::business_assets::{BusinessAssets, BusinessIcon};
 use yew_styles::layouts::{
@@ -46,9 +48,9 @@ impl Component for HomePage {
                     <>
                       {"Shylock te ayuda a buscar las mejores subastas. Busca "}
                       <BusinessAssets
-                        icon = BusinessIcon::Target
-                        fill = "#fff"
-                        size = ("30".to_string(),"30".to_string()) />
+                        icon=BusinessIcon::Target
+                        fill=DEFAULT_UX_ASSET_COLOR
+                        size=(DEFAULT_UX_ASSET_SIZE.to_string(), DEFAULT_UX_ASSET_SIZE.to_string()) />
                       {" para bienes que merezcan la pena."}
                     </>
                 }) />

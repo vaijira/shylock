@@ -1,4 +1,4 @@
-use crate::global::ASSETS;
+use crate::global::{ASSETS, DEFAULT_UX_ASSET_COLOR, DEFAULT_UX_ASSET_SIZE};
 use crate::utils::{format_valuation, get_bidinfo, get_external_url};
 
 use shylock_data::types::Asset;
@@ -42,83 +42,91 @@ impl Component for OtherDetailPage {
         if let Some(Asset::Other(other)) = asset {
             html! {
               <Container direction=Direction::Row wrap=Wrap::Wrap>
-                <Item layouts=vec!(ItemLayout::ItXs(12))>
+                <Item layouts=vec!(ItemLayout::ItXs(2))>
+                  <Text
+                    text_type=TextType::Plain
+                    text_size=Size::Small
+                    plain_text="Id subasta:"
+                    html_text=None />
+                </Item>
+                <Item layouts=vec!(ItemLayout::ItXs(10))>
                   <a href={get_external_url(&other.auction_id)}
-                    alt="enlace del bien en subastas BOE"
+                    alt="enlace a subastas BOE"
                     target="_blank">
+                    {&other.auction_id}{" "}
                     <NavAssets
-                      icon = NavIcon::ExternalLink
-                      fill = "#fff"
-                      size = ("30".to_string(),"30".to_string()) />
+                      icon=NavIcon::ExternalLink
+                      fill=DEFAULT_UX_ASSET_COLOR
+                      size=(DEFAULT_UX_ASSET_SIZE.to_string(), DEFAULT_UX_ASSET_SIZE.to_string()) />
                   </a>
                 </Item>
                 <Item layouts=vec!(ItemLayout::ItXs(2))>
                   <Text
-                    text_type=TextType::Paragraph
-                    text_size=Size::Medium
+                    text_type=TextType::Plain
+                    text_size=Size::Small
                     plain_text="Descripción:"
                     html_text=None />
                 </Item>
                 <Item layouts=vec!(ItemLayout::ItXs(10))>
                   <Text
-                    text_type=TextType::Paragraph
-                    text_size=Size::Medium
+                    text_type=TextType::Plain
+                    text_size=Size::Small
                     plain_text=""
                     html_text=html!{&other.description} />
                 </Item>
                 <Item layouts=vec!(ItemLayout::ItXs(2))>
                   <Text
-                    text_type=TextType::Paragraph
-                    text_size=Size::Medium
+                    text_type=TextType::Plain
+                    text_size=Size::Small
                     plain_text="Información adicional:"
                     html_text=None />
                 </Item>
                 <Item layouts=vec!(ItemLayout::ItXs(10))>
                   <Text
-                    text_type=TextType::Paragraph
-                    text_size=Size::Medium
+                    text_type=TextType::Plain
+                    text_size=Size::Small
                     plain_text=""
                     html_text=html!{&other.additional_information} />
                 </Item>
                 <Item layouts=vec!(ItemLayout::ItXs(2))>
                   <Text
-                    text_type=TextType::Paragraph
-                    text_size=Size::Medium
+                    text_type=TextType::Plain
+                    text_size=Size::Small
                     plain_text="Valor subasta:"
                     html_text=None />
                 </Item>
                 <Item layouts=vec!(ItemLayout::ItXs(10))>
                   <Text
-                    text_type=TextType::Paragraph
-                    text_size=Size::Medium
+                    text_type=TextType::Plain
+                    text_size=Size::Small
                     plain_text=""
                     html_text=html!{<>{format_valuation(&get_bidinfo(&other.bidinfo, &other.auction_id).value)}{" €"}</>} />
                 </Item>
                 <Item layouts=vec!(ItemLayout::ItXs(2))>
                   <Text
-                    text_type=TextType::Paragraph
-                    text_size=Size::Medium
+                    text_type=TextType::Plain
+                    text_size=Size::Small
                     plain_text="Cantidad reclamada:"
                     html_text=None />
                 </Item>
                 <Item layouts=vec!(ItemLayout::ItXs(10))>
                   <Text
-                    text_type=TextType::Paragraph
-                    text_size=Size::Medium
+                    text_type=TextType::Plain
+                    text_size=Size::Small
                     plain_text=""
                     html_text=html!{<>{format_valuation(&get_bidinfo(&other.bidinfo, &other.auction_id).claim_quantity)}{" €"}</>} />
                 </Item>
                 <Item layouts=vec!(ItemLayout::ItXs(2))>
                   <Text
-                    text_type=TextType::Paragraph
-                    text_size=Size::Medium
+                    text_type=TextType::Plain
+                    text_size=Size::Small
                     plain_text="Valor tasación:"
                     html_text=None />
                 </Item>
                 <Item layouts=vec!(ItemLayout::ItXs(10))>
                   <Text
-                    text_type=TextType::Paragraph
-                    text_size=Size::Medium
+                    text_type=TextType::Plain
+                    text_size=Size::Small
                     plain_text=""
                     html_text=html!{<>{format_valuation(&get_bidinfo(&other.bidinfo, &other.auction_id).appraisal)}{" €"}</>} />
                 </Item>

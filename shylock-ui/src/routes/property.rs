@@ -42,6 +42,7 @@ impl Component for PropertyPage {
     type Properties = Props;
 
     fn create(props: Self::Properties, link: ComponentLink<Self>) -> Self {
+        log::debug!("created");
         Self {
             props,
             state: State {
@@ -54,6 +55,7 @@ impl Component for PropertyPage {
     }
 
     fn update(&mut self, message: Self::Message) -> ShouldRender {
+        log::debug!("update, province selected: {}", self.state.province.name());
         match message {
             Msg::SelectProvince(value) => {
                 if value == Province::All {
