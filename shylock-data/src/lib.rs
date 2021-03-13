@@ -1,4 +1,10 @@
-#![warn(rust_2018_idioms, missing_docs, warnings, unused_extern_crates)]
+#![warn(
+    rust_2018_idioms,
+    missing_docs,
+    warnings,
+    missing_debug_implementations,
+    unused_extern_crates
+)]
 
 //! Main data structures holding information about spanish auctions.
 

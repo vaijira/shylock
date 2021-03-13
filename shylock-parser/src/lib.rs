@@ -1,4 +1,10 @@
-#![warn(rust_2018_idioms, missing_docs, warnings)]
+#![warn(
+    rust_2018_idioms,
+    missing_docs,
+    missing_debug_implementations,
+    unused_extern_crates,
+    warnings
+)]
 
 //! Library to parse and collect information about spanish auctions.
 //!
