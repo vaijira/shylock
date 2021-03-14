@@ -33,6 +33,12 @@ jobs:
           restore-keys: |
             cargo-${{ runner.os }}-
 
+      - name: Make envfile
+        uses: SpicyPizza/create-envfile@v1
+        with:
+          envkey_THUNDERFOREST_API_KEY: "1"
+          file_name: .env
+
       - name: Run fmt
         uses: actions-rs/cargo@v1
         with:
@@ -72,6 +78,12 @@ jobs:
           key: cargo-${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}
           restore-keys: |
             cargo-${{ runner.os }}-
+
+      - name: Make envfile
+        uses: SpicyPizza/create-envfile@v1
+        with:
+          envkey_THUNDERFOREST_API_KEY: "1"
+          file_name: .env
 
       - name: Run tests
         uses: actions-rs/cargo@v1
