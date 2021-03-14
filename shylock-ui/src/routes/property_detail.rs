@@ -1,6 +1,9 @@
-use crate::{global::{ASSETS, DEFAULT_UX_ASSET_COLOR, DEFAULT_UX_ASSET_SIZE}, show_map};
 use crate::utils::{format_valuation, get_bidinfo, get_external_url};
 use crate::THUNDERFOREST_API_KEY;
+use crate::{
+    global::{ASSETS, DEFAULT_UX_ASSET_COLOR, DEFAULT_UX_ASSET_SIZE},
+    show_map,
+};
 
 use shylock_data::types::Asset;
 use yew::prelude::*;
@@ -170,11 +173,15 @@ impl Component for PropertyDetailPage {
     }
 
     fn rendered(&mut self, _first_render: bool) {
-      let asset = ASSETS.get().unwrap().get(self.props.position);
-      if let Some(Asset::Property(property)) = asset {
-        if property.coordinates.is_some() {
-            show_map(THUNDERFOREST_API_KEY, property.coordinates.unwrap().lat(), property.coordinates.unwrap().lng());
+        let asset = ASSETS.get().unwrap().get(self.props.position);
+        if let Some(Asset::Property(property)) = asset {
+            if property.coordinates.is_some() {
+                show_map(
+                    THUNDERFOREST_API_KEY,
+                    property.coordinates.unwrap().lat(),
+                    property.coordinates.unwrap().lng(),
+                );
+            }
         }
-      }
     }
 }
