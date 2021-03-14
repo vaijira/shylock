@@ -5,3 +5,4 @@ shylock*/tmp
 shylock*/Cargo.lock
 /target
 Cargo.lock
+.env

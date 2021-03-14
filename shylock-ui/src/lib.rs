@@ -16,8 +16,18 @@ mod route;
 mod routes;
 mod utils;
 
+use load_dotenv::load_dotenv;
 use wasm_bindgen::prelude::*;
 use yew::prelude::*;
+
+load_dotenv!();
+
+pub(crate) static THUNDERFOREST_API_KEY: &str = env!("THUNDERFOREST_API_KEY");
+
+#[wasm_bindgen(module = "/static/map.js")]
+extern "C" {
+    pub unsafe fn show_map(apikey: &str, lat: f64, lon: f64);
+}
 
 /// Main entry point for shylock ui app
 #[wasm_bindgen(start)]
