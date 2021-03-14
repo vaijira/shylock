@@ -1,0 +1,13 @@
+body {
+    font-family: "Source Sans Pro", sans-serif;
+    -webkit-font-smoothing: subpixel-antialiased;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom));
+}
+
+.pointer {
+	cursor: pointer;
+}
+
+#mapid {
+    height: 180px;
+}
