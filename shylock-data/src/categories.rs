@@ -362,7 +362,7 @@ other_categories! {
     (Cars, "TURISMOS", "Turismos");
 
     /// Commodities
-    (Commodities, "MERCADERÍAS Y MATERIAS PRIMAS", "Mercaderías y materias primas");
+    (Commodities, "MERCADERIASYMATERIASPRIMAS", "Mercaderías y materias primas");
 
     /// Furniture
     (Furniture, "MOBILIARIO", "Mobiliario");
