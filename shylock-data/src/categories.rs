@@ -358,6 +358,12 @@ other_categories! {
     /// Antiques
     (Antiques, "JOYAS,OBRASDEARTEYANTIGÜEDADES", "Joyas, obras de arte y antigüedades");
 
+    /// Cars
+    (Cars, "TURISMOS", "Turismos");
+
+    /// Commodities
+    (Commodities, "MERCADERÍAS Y MATERIAS PRIMAS", "Mercaderías y materias primas");
+
     /// Furniture
     (Furniture, "MOBILIARIO", "Mobiliario");
 

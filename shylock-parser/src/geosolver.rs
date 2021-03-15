@@ -1,5 +1,7 @@
 use geo_types::Point;
-use std::{thread, time};
+use lazy_static::lazy_static;
+use regex::Regex;
+use std::{borrow::Cow, thread, time};
 
 use crate::scraper::APP_USER_AGENT;
 
@@ -32,24 +34,21 @@ impl GeoSolver {
         Ok(body)
     }
 
-    pub(crate) fn resolve(
-        &self,
-        city: &str,
-        province: &str,
-        country: &str,
-        postal_code: &str,
-    ) -> Result<Option<Point<f64>>, Box<dyn std::error::Error>> {
-        let address = format!(
-            "{}?city={}&state={}&country={}&postalcode={}&countrycodes=es&format=jsonv2",
-            NOMINATIN_OSM_URL, city, province, country, postal_code
-        );
+    fn clean_address<'a>(&self, address: &'a str) -> Cow<'a, str> {
+        lazy_static! {
+            static ref REMOVE_SPACES: Regex = Regex::new("[[:blank:]]+").unwrap();
+        }
 
+        REMOVE_SPACES.replace_all(address, " ")
+    }
+
+    fn try_url(&self, url: &str) -> Result<Option<Point<f64>>, Box<dyn std::error::Error>> {
         // Openstreet map is a free service sleep 1 second to not abuse.
         let one_second = time::Duration::from_secs(1);
         thread::sleep(one_second);
 
-        log::debug!("nominatin url: {}", address);
-        let body = self.get_url(&address)?;
+        log::debug!("nominatin url: {}", url);
+        let body = self.get_url(&url)?;
         let json: serde_json::Value = serde_json::from_str(&body)?;
 
         log::debug!("json: {}", json);
@@ -69,6 +68,31 @@ impl GeoSolver {
 
         log::debug!("Coordinates x: {}, y: {}", x, y);
         Ok(Some(Point::new(x, y)))
+    }
+    pub(crate) fn resolve(
+        &self,
+        address: &str,
+        city: &str,
+        province: &str,
+        country: &str,
+        postal_code: &str,
+    ) -> Result<Option<Point<f64>>, Box<dyn std::error::Error>> {
+        let url =
+            format!(
+            "{}?street={}&city={}&state={}&country={}&postalcode={}&countrycodes=es&format=jsonv2",
+            NOMINATIN_OSM_URL, self.clean_address(address), city, province, country, postal_code
+        );
+
+        let mut result = self.try_url(&url).unwrap_or(None);
+        if result.is_none() {
+            let url = format!(
+                "{}?city={}&state={}&country={}&postalcode={}&countrycodes=es&format=jsonv2",
+                NOMINATIN_OSM_URL, city, province, country, postal_code
+            );
+            result = self.try_url(&url)?;
+        }
+
+        Ok(result)
     }
 }
 #[cfg(test)]

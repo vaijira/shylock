@@ -56,6 +56,7 @@ fn get_auctions_links(url_fetcher: &UrlFetcher) -> Result<Vec<String>, Box<dyn s
 fn update_asset_coordinates(asset: &mut Asset, geosolver: &GeoSolver) {
     if let Asset::Property(property) = asset {
         property.coordinates = match geosolver.resolve(
+            &property.address,
             &property.city,
             property.province.name(),
             DEFAULT_COUNTRY,
