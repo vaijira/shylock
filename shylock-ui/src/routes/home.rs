@@ -46,12 +46,17 @@ impl Component for HomePage {
                 html_text=Some(
                   html!{
                     <>
-                      {"Shylock te ayuda a buscar las mejores subastas. Busca "}
-                      <BusinessAssets
-                        icon=BusinessIcon::Target
-                        fill=DEFAULT_UX_ASSET_COLOR
-                        size=(DEFAULT_UX_ASSET_SIZE.to_string(), DEFAULT_UX_ASSET_SIZE.to_string()) />
-                      {" para bienes que merezcan la pena."}
+                      <p>
+                        {"Coditia te ayuda a buscar las mejores subastas. Busca "}
+                        <BusinessAssets
+                          icon=BusinessIcon::Target
+                          fill=DEFAULT_UX_ASSET_COLOR
+                          size=(DEFAULT_UX_ASSET_SIZE.to_string(), DEFAULT_UX_ASSET_SIZE.to_string()) />
+                        {" para bienes que merezcan la pena."}
+                      </p>
+                      <p>
+                        <a href="mailto:contacto@coditia.com" alt="contacto">{"Escríbeme"}</a>{" para cualquier duda o sugerencia."}
+                      </p>
                     </>
                 }) />
             </Item>
