@@ -60,6 +60,18 @@ macro_rules! auction_provinces {
                     }).collect();
 
                 match &province[..] {
+                    "ALICANTE/ALACANT" => Ok(Province::Alicante),
+                    "ARABA/ALAVA" => Ok(Province::Alava),
+                    "BIZKAIA" => Ok(Province::Vizcaya),
+                    "CASTELLON/CASTELLO" => Ok(Province::Castellon),
+                    "GIPUZKOA" => Ok(Province::Guipuzcoa),
+                    "GIRONA" => Ok(Province::Gerona),
+                    "ILLESBALEARS" => Ok(Province::Baleares),
+                    "ILLESBALLEARS" => Ok(Province::Baleares),
+                    "LLEIDA" => Ok(Province::Lerida),
+                    "OURENSE" => Ok(Province::Orense),
+                    "VALENCIA/VALÈNCIA" => Ok(Province::Valencia),
+                    "VALÈNCIA" => Ok(Province::Valencia),
                     $(
                     $name => Ok(Province::$konst) ,
                     )+
