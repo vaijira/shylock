@@ -111,10 +111,7 @@ pub(crate) fn parse_lot_auction_page(
         .select(data_selector)
         .next()
         .ok_or("no div[id=idBloqueLoteX] field found")?;
-    let header = data
-        .select(h4_selector)
-        .next()
-        .ok_or("no h4 field found")?;
+    let header = data.select(h4_selector).next().ok_or("no h4 field found")?;
 
     result.insert(
         BoeConcept::Header,
