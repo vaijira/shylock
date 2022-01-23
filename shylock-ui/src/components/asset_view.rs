@@ -156,7 +156,7 @@ impl AssetView {
           body_palette=Palette::Standard
           is_open={self.current_modal == self.props.position}
           onclick_signal= self.link.callback(|_| Msg::CloseModal)
-          onkeydown_signal= self.link.callback(|e| Msg::CloseModalByKb(e)) />
+          onkeydown_signal= self.link.callback(Msg::CloseModalByKb) />
         }
     }
 

@@ -51,7 +51,7 @@ impl Component for VehiclePage {
 
         html! {
             <Container direction=Direction::Row wrap=Wrap::Wrap>
-            {assets.drain(..).map(|x| get_items(x)).collect::<Html>()}
+            {assets.drain(..).map(get_items).collect::<Html>()}
             </Container>
         }
     }

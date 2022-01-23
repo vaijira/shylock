@@ -1,4 +1,4 @@
-use clap::clap_app;
+use clap::{arg, App};
 use env_logger::Env;
 use serde::Serialize;
 use std::fs::File;
@@ -27,16 +27,15 @@ where
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::from_env(Env::default().default_filter_or("info")).init();
-    let matches = clap_app!(myapp =>
-        (version: "0.1")
-        (author: "Jorge Perez Burgos <vaijira@gmail.com>")
-        (about: "Download subastas.boe.es ongoing auctions.")
-        (@arg OUTPUT_DIR: -o --output +takes_value "Sets the output directory, default: /tmp")
-    )
-    .get_matches();
+    let matches = App::new("boedownloader")
+        .version("0.1")
+        .author("Jorge Perez Burgos <vaijira@gmail.com>")
+        .about("Download subastas.boe.es ongoing auctions.")
+        .arg(arg!(-o --output <OUTPUT_DIR> "Sets the output directory, default: /tmp"))
+        .get_matches();
 
     // Gets a value for config if supplied by user, or defaults to "default.conf"
-    let output_dir = matches.value_of("OUTPUT_DIR").unwrap_or("/tmp");
+    let output_dir = matches.value_of("output").unwrap_or("/tmp");
     log::info!("Value for output dir: {}", output_dir);
 
     let (auctions, assets) = shylock_parser::scrape()?;

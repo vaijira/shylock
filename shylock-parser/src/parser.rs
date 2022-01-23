@@ -9,7 +9,7 @@ fn parse_html_table(
 ) -> Result<HashMap<BoeConcept, String>, Box<dyn std::error::Error>> {
     let mut result: HashMap<BoeConcept, String> = HashMap::new();
 
-    let doc = Html::parse_document(&page);
+    let doc = Html::parse_document(page);
     let data = doc
         .select(data_selector)
         .next()
@@ -57,10 +57,10 @@ pub(crate) fn parse_asset_auction_page(
 
     let mut result = parse_html_table(page, data_selector)?;
 
-    let doc = Html::parse_document(&page);
+    let doc = Html::parse_document(page);
     let data = doc.select(data_selector).next().ok_or("no div found")?;
     let header = data
-        .select(&h4_selector)
+        .select(h4_selector)
         .next()
         .ok_or("no header h4 found")?;
 
@@ -106,13 +106,13 @@ pub(crate) fn parse_lot_auction_page(
 
     let mut result = parse_html_table(page, data_selector)?;
 
-    let doc = Html::parse_document(&page);
+    let doc = Html::parse_document(page);
     let data = doc
         .select(data_selector)
         .next()
         .ok_or("no div[id=idBloqueLoteX] field found")?;
     let header = data
-        .select(&h4_selector)
+        .select(h4_selector)
         .next()
         .ok_or("no h4 field found")?;
 
@@ -127,7 +127,7 @@ pub(crate) fn parse_lot_auction_page(
 pub(crate) fn parse_main_auction_links(
     page: &str,
 ) -> Result<(String, String), Box<dyn std::error::Error>> {
-    let doc = Html::parse_document(&page);
+    let doc = Html::parse_document(page);
     let links_selector =
         Selector::parse("ul.navlist").expect("ul.navlist selector creation failed");
     let data = doc
@@ -230,6 +230,104 @@ mod tests {
                  pages.get(0).unwrap());
         assert_eq!(&"https://subastas.boe.es/./detalleSubasta.php?idSub=SUB-JA-2020-158475&ver=3&idLote=2&idBus=_SGFOTnU2NVlnSUwvd2czQzBFcHdoUDFlZTZGS1pLT1lwNm5pbmNIdmNGTXpLNUpZcXNGRElabzlLSGdEckkwL1NuQmpKT3lSd3Z2QTJiM0dPTURUNXBYOEhSNzhqRG5CdExSSXFxZkZSM1phdTh2bkIwUjRXaWFwdkJ2ZzNmVmV0NWc5NjJpU2FDdHQ1amc1SHJSUmhGTGFSTkk4dlFkSWYwTXA5ckFaRUh2TWtkcjM4UmFVY3VCa1JOcklEdWFDdFZpcC81Z0I4UVVYRDdqQjhLeW9RZ2R3aHpOMzRXY1cyZWJwZWRKSXY2RkRHRndmL2JIUXFQckVHdVYzUEh6VA,,&numPagBus=#cont-tabs",
                  pages.get(1).unwrap());
+    }
+    #[test]
+    fn parse_multiple_lot_auction_page_test() {
+        const _INPUT: &str = r#"<div id="idBloqueDatos3">
+      <div>
+        <div class="bloque" id="idBloqueLote1">
+          <div>
+            <div class="caja">SUBASTA DE 2 VEH&#xCD;CULOS</div>
+          </div>
+          <div>
+            <h3>Datos de los bienes subastados</h3>
+            <div>
+              <h4>Bien 1 - Bien mueble (Otros bienes y derechos)</h4>
+              <table>
+                <tr>
+                  <th>Descripci&#xF3;n</th>
+                  <td>TRACTOR DE CAMI&#xD3;N, marca SCANIA R480 LA 4X2 MEB
+    Matr&#xED;cula 9368HYC
+    Fecha 1&#xAA; matriculaci&#xF3;n 06/01/2010
+    Fecha rematriculaci&#xF3;n 30/06/2014
+    Bastidor XLER4X20095230715
+    Contrase&#xF1;a Homologaci&#xF3;n C-2417
+    Kil&#xF3;metros Seg&#xFA;n ITV a 25/02/2020 ten&#xED;a 1055479.
+    Carburante Di&#xE9;sel
+    Color Gris
+    Cilindrada 12740.0 CC
+    Potencia 353 kW / 47.57 cvf</td>
+                </tr>
+                <tr>
+                  <th>Dep&#xF3;sito</th>
+                  <td>Ubicaci&#xF3;n de los bienes objeto de subasta: Avenida de los Cordeleros n&#xBA; 17 y en la planta de
+    hormig&#xF3;n Fernando Rico, Segovia.</td>
+                </tr>
+                <tr>
+                  <th>Visitable</th>
+                  <td>S&#xED; (Es posible visitar los veh&#xED;culos por las personas interesadas pudiendo
+    asistirles los peritos o t&#xE9;cnicos que crean oportunos, sin posibilidad de prueba de funcionamiento,
+    y debiendo concretar una cita previamente a trav&#xE9;s de esta oficina.)</td>
+                </tr>
+                <tr>
+                  <th>Cargas</th>
+                  <td>NO CONSTAN</td>
+                </tr>
+                <tr>
+                  <th>Informaci&#xF3;n adicional</th>
+                  <td>Chapa y pintura El parachoques est&#xE1; rallado.
+    Ruedas en mal estado.                                    Interior Ocularmente se observa que el asiento y el salpicadero tienen algunos da&#xF1;os.
+    Motor No se puso en marcha el veh&#xED;culo por lo que se desconoce el estado y funcionamiento del motor, cuadros y luces.
+    Documentaci&#xF3;n y llaves Existe documentaci&#xF3;n pero no existen llaves
+    ITV La &#xFA;ltima inspecci&#xF3;n t&#xE9;cnica caduc&#xF3; el 25/08/2020
+    </td>
+                </tr>
+              </table>
+            </div>
+            <div>
+              <h4>Bien 2 - Bien mueble (Otros bienes y derechos)</h4>
+              <table>
+                <tr>
+                  <th>Descripci&#xF3;n</th>
+                  <td>Semirremolque Caja
+    Marca LECITRAILER
+    Modelo 3E20
+    Matr&#xED;cula R1407BCF
+    Fecha 1&#xAA; matriculaci&#xF3;n 19/02/2008
+    Bastidor VV1P3AAWASN135717
+    Contrase&#xF1;a Homologaci&#xF3;n D-2440
+    Color Azul
+    Cilindrada 12740.0 CC
+    Otros TARA 7720 y MMA 35000</td>
+                </tr>
+                <tr>
+                  <th>Dep&#xF3;sito</th>
+                  <td>Ubicaci&#xF3;n de los bienes objeto de subasta: Avenida de los Cordeleros n&#xBA; 17 y en la planta de
+    hormig&#xF3;n Fernando Rico, Segovia.</td>
+                </tr>
+                <tr>
+                  <th>Visitable</th>
+                  <td>S&#xED; (Es posible visitar los veh&#xED;culos por las personas interesadas pudiendo
+    asistirles los peritos o t&#xE9;cnicos que crean oportunos, sin posibilidad de prueba de funcionamiento,
+    y debiendo concretar una cita previamente a trav&#xE9;s de esta oficina.)</td>
+                </tr>
+                <tr>
+                  <th>Cargas</th>
+                  <td>NO CONSTAN</td>
+                </tr>
+                <tr>
+                  <th>Informaci&#xF3;n adicional</th>
+                  <td>Lunas e intermitencias Intermitente izquierdo roto
+    Ruedas en mal estado.
+    Documentaci&#xF3;n y llaves No existe documentaci&#xF3;n ni llaves
+    ITV La &#xFA;ltima inspecci&#xF3;n t&#xE9;cnica caduc&#xF3; el 20/02/2020.</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>"#;
     }
     #[test]
     fn parse_lot_auction_page_test() {

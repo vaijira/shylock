@@ -21,10 +21,10 @@ rust_decimal = "1.7"
 serde = { version = "1.0", features = ["derive"] }
 shylock-data = { path = "../shylock-data" }
 substring = "1.4"
-yew = "0.17"
+yew = "0.18"
 yew_assets= {version = "0.1", features = ["full"]}
-yew-router = "0.14"
-yew_styles = { version="0.9", features=["full"] }
-yewtil = "0.3"
+yew-router = "0.15"
+yew_styles = { version = "0.9", features=["full"] }
+yewtil = "0.4"
 wasm-bindgen = "0.2"
 wasm-logger = "0.2"

@@ -358,11 +358,17 @@ other_categories! {
     /// Antiques
     (Antiques, "JOYAS,OBRASDEARTEYANTIGÜEDADES", "Joyas, obras de arte y antigüedades");
 
+    /// Business premises
+    (BusinessPremises, "LOCALCOMERCIAL", "Local comercial");
+
     /// Cars
     (Cars, "TURISMOS", "Turismos");
 
     /// Commodities
     (Commodities, "MERCADERIASYMATERIASPRIMAS", "Mercaderías y materias primas");
+
+    /// Garage
+    (Garage, "GARAJE", "Garaje");
 
     /// Furniture
     (Furniture, "MOBILIARIO", "Mobiliario");

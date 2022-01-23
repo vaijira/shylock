@@ -1,7 +1,4 @@
-use yew::{
-    virtual_dom::{Transformer, VComp},
-    web_sys::Url,
-};
+use yew::{html::IntoPropValue, web_sys::Url};
 use yew_router::{components::RouterAnchor, prelude::*, switch::Permissive};
 
 #[derive(Switch, Debug, Clone)]
@@ -27,10 +24,6 @@ pub enum AppRoute {
 impl AppRoute {
     pub fn into_public(self) -> PublicUrlSwitch {
         PublicUrlSwitch(self)
-    }
-
-    pub fn into_route(self) -> Route {
-        Route::from(self.into_public())
     }
 }
 
@@ -89,10 +82,9 @@ impl Switch for PublicUrlSwitch {
 }
 
 // this allows us to pass `AppRoute` to components which take `PublicUrlSwitch`.
-
-impl Transformer<AppRoute, PublicUrlSwitch> for VComp {
-    fn transform(from: AppRoute) -> PublicUrlSwitch {
-        from.into_public()
+impl IntoPropValue<PublicUrlSwitch> for AppRoute {
+    fn into_prop_value(self: AppRoute) -> PublicUrlSwitch {
+        self.into_public()
     }
 }
 

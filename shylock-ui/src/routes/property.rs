@@ -140,7 +140,7 @@ impl Component for PropertyPage {
             </Container>
 
             <Container direction=Direction::Row wrap=Wrap::Wrap>
-            {assets.drain(first_item..last_item).map(|x| get_items(x)).collect::<Html>()}
+            {assets.drain(first_item..last_item).map(get_items).collect::<Html>()}
             </Container>
          </>
         }
@@ -207,7 +207,7 @@ fn get_asset_city_select(page: &PropertyPage) -> Html {
         <option selected={page.state.city == BLANK_OPTION} value="">{"Todas las ciudades"}</option>
         {
             for CITIES.get().unwrap().iter().map(|city| html!{
-                <option selected={&page.state.city == city} value={city}>{city}</option>
+                <option selected={&page.state.city == city} value={*city}>{city}</option>
             })
         }
         </>

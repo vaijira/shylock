@@ -18,7 +18,6 @@ mod utils;
 
 use load_dotenv::load_dotenv;
 use wasm_bindgen::prelude::*;
-use yew::prelude::*;
 
 load_dotenv!();
 
@@ -30,10 +29,10 @@ extern "C" {
 }
 
 /// Main entry point for shylock ui app
+#[allow(clippy::unused_unit)]
 #[wasm_bindgen(start)]
-pub fn run_app() {
+pub fn main() {
     wasm_logger::init(wasm_logger::Config::new(log::Level::Debug));
     console_error_panic_hook::set_once();
-
-    App::<app::App>::new().mount_to_body();
+    yew::start_app::<app::App>();
 }

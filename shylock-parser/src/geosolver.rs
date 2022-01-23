@@ -48,7 +48,7 @@ impl GeoSolver {
         thread::sleep(one_second);
 
         log::debug!("nominatin url: {}", url);
-        let body = self.get_url(&url)?;
+        let body = self.get_url(url)?;
         let json: serde_json::Value = serde_json::from_str(&body)?;
 
         log::debug!("json: {}", json);

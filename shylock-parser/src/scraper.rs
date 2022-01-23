@@ -99,7 +99,7 @@ fn process_auction_link(
         LotAuctionKind::Joined | LotAuctionKind::Splitted => {
             let lot_links = parse_lot_auction_page_links(&asset_page)?;
             for (i, lot_link) in lot_links.iter().enumerate() {
-                let lot_page = url_fetcher.get_url(&lot_link)?;
+                let lot_page = url_fetcher.get_url(lot_link)?;
                 let mut asset = Asset::new(&auction.id, &parse_lot_auction_page(&lot_page, i + 1)?);
                 update_asset_coordinates(&mut asset, &geosolver);
                 assets.push(asset);
