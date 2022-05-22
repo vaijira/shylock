@@ -68,6 +68,7 @@ macro_rules! auction_provinces {
                     "GIRONA" => Ok(Province::Gerona),
                     "ILLESBALEARS" => Ok(Province::Baleares),
                     "ILLESBALLEARS" => Ok(Province::Baleares),
+                    "LACORUÑA" => Ok(Province::ACorunia),
                     "LLEIDA" => Ok(Province::Lerida),
                     "OURENSE" => Ok(Province::Orense),
                     "VALENCIA/VALÈNCIA" => Ok(Province::Valencia),

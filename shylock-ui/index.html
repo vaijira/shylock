@@ -9,7 +9,7 @@
     <link rel="canonical" href="https://www.coditia.com" />
     <base data-trunk-public-url />
     <link rel="shortcut icon" href="#" />
-    <script async defer data-domain="coditia.com" src="https://stats.coditia.com/js/index.js"></script>
+    <script defer data-api="/api/event" data-domain="coditia.com" src="/js/script.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
     integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
     crossorigin=""/>
@@ -26,5 +26,6 @@
     <link data-trunk rel="css" href="static/styles.css" />
     <link data-trunk rel="css" href="tmp/node_modules/yew-styles/main.css" />
   </head>
-  <body></body>
+  <body><link data-trunk rel="rust" data-wasm-opt="z"/>
+  </body>
 </html>

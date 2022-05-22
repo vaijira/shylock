@@ -373,6 +373,9 @@ other_categories! {
     /// Furniture
     (Furniture, "MOBILIARIO", "Mobiliario");
 
+    /// Industrial rights
+    (IndustrialRights, "DERECHOSDEPROPIEDADINDUSTRIAL", "Derechos de propiedad industrial");
+
     /// Machinery
     (Machinery, "MAQUINARIA", "Maquinaria");
 
