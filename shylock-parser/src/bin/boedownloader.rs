@@ -1,4 +1,4 @@
-use clap::{arg, App};
+use clap::{arg, Command};
 use env_logger::Env;
 use serde::Serialize;
 use std::fs::File;
@@ -27,7 +27,7 @@ where
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::from_env(Env::default().default_filter_or("info")).init();
-    let matches = App::new("boedownloader")
+    let matches = Command::new("boedownloader")
         .version("0.1")
         .author("Jorge Perez Burgos <vaijira@gmail.com>")
         .about("Download subastas.boe.es ongoing auctions.")
