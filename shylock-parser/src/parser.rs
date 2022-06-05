@@ -3,6 +3,8 @@ use scraper::{Html, Selector};
 use shylock_data::concepts::BoeConcept;
 use std::collections::HashMap;
 
+const RESULTS_PER_PAGE: u32 = 500;
+
 fn parse_html_table(
     page: &str,
     data_selector: &Selector,
@@ -169,13 +171,42 @@ pub(crate) fn parse_main_auction_page(
 pub(crate) fn parse_extra_pages(main_page: &str) -> Vec<String> {
     let mut result = Vec::new();
     let doc = Html::parse_document(main_page);
+    let pages_number_p =
+        Selector::parse("div.paginar").expect("div.paginar selector creation failed");
+
+    let pages = if let Some(paragraph) = doc.select(&pages_number_p).next() {
+        let text = paragraph.text().collect::<String>();
+        let words = text.trim().split(' ');
+
+        let results = words
+            .last()
+            .expect("number")
+            .replace(".", "")
+            .parse::<u32>()
+            .unwrap();
+        (results / RESULTS_PER_PAGE) + 1
+    } else {
+        panic!("Unable to determine number of auctions pages");
+    };
+
     let pages_div = Selector::parse("div.paginar2").expect("div.paginar2 selector creation failed");
 
     if let Some(div) = doc.select(&pages_div).next() {
         let anchors_selector = Selector::parse("a").expect("a selector creation failed");
-        for page_anchor in div.select(&anchors_selector) {
-            if let Some(href) = page_anchor.value().attr("href") {
-                result.push(BASE_BOE_URL.to_owned() + href);
+        if let Some(page_anchor) = div.select(&anchors_selector).next() {
+            if let Some(href_tmp) = page_anchor.value().attr("href") {
+                let href_template = href_tmp
+                    .chars()
+                    .take_while(|c| *c != '-')
+                    .collect::<String>();
+                for page in 1..pages + 1 {
+                    let href = href_template.to_owned()
+                        + "-"
+                        + &(page * RESULTS_PER_PAGE).to_string()
+                        + "-"
+                        + &RESULTS_PER_PAGE.to_string();
+                    result.push(BASE_BOE_URL.to_owned() + &href);
+                }
             }
         }
     }
@@ -458,58 +489,63 @@ mod tests {
     }
     #[test]
     fn parse_extra_pages_test() {
-        const INPUT: &str = r#"<body><div class="paginar2">
-      <ul>
-        <li>
-          <span class="fuera">Está usted en la página de resultados número </span>
-          <span class="current">1</span>
-        </li>
-        <li>
-          <a href="subastas_ava.php?accion=Mas&amp;id_busqueda=_SGFOTnU2NVlnSUwvd2czQzBFcHdoUDFlZTZGS1pLT1lwNm5pbmNIdmNGTXpLNUpZcXNGRElabzlLSGdEckkwL1NuQmpKT3lSd3Z2QTJiM0dPTURUNXBYOEhSNzhqRG5CdExSSXFxZkZSM1phdTh2bkIwUjRXaWFwdkJ2ZzNmVmV0NWc5NjJpU2FDdHQ1amc1SHJSUmhGTGFSTkk4dlFkSWYwTXA5ckFaRUh2TWtkcjM4UmFVY3VCa1JOcklEdWFDdFZpcC81Z0I4UVVYRDdqQjhLeW9RZ2R3aHpOMzRXY1cyZWJwZWRKSXY2RkRHRndmL2JIUXFQckVHdVYzUEh6VA,,-500-500">
-            <span class="pagSigxxx">2</span>
-          </a>
-        </li>
-        <li>
-          <a href="subastas_ava.php?accion=Mas&amp;id_busqueda=_SGFOTnU2NVlnSUwvd2czQzBFcHdoUDFlZTZGS1pLT1lwNm5pbmNIdmNGTXpLNUpZcXNGRElabzlLSGdEckkwL1NuQmpKT3lSd3Z2QTJiM0dPTURUNXBYOEhSNzhqRG5CdExSSXFxZkZSM1phdTh2bkIwUjRXaWFwdkJ2ZzNmVmV0NWc5NjJpU2FDdHQ1amc1SHJSUmhGTGFSTkk4dlFkSWYwTXA5ckFaRUh2TWtkcjM4UmFVY3VCa1JOcklEdWFDdFZpcC81Z0I4UVVYRDdqQjhLeW9RZ2R3aHpOMzRXY1cyZWJwZWRKSXY2RkRHRndmL2JIUXFQckVHdVYzUEh6VA,,-1000-500">
-            <span class="pagSigxxx">3</span>
-          </a>
-        </li>
-        <li>
-          <a href="subastas_ava.php?accion=Mas&amp;id_busqueda=_SGFOTnU2NVlnSUwvd2czQzBFcHdoUDFlZTZGS1pLT1lwNm5pbmNIdmNGTXpLNUpZcXNGRElabzlLSGdEckkwL1NuQmpKT3lSd3Z2QTJiM0dPTURUNXBYOEhSNzhqRG5CdExSSXFxZkZSM1phdTh2bkIwUjRXaWFwdkJ2ZzNmVmV0NWc5NjJpU2FDdHQ1amc1SHJSUmhGTGFSTkk4dlFkSWYwTXA5ckFaRUh2TWtkcjM4UmFVY3VCa1JOcklEdWFDdFZpcC81Z0I4UVVYRDdqQjhLeW9RZ2R3aHpOMzRXY1cyZWJwZWRKSXY2RkRHRndmL2JIUXFQckVHdVYzUEh6VA,,-500-500">
-            <span class="pagSig"><abbr title="Página">Pág.</abbr> siguiente</span>
-          </a>
-        </li>
-      </ul>
-    </div>
-    <div class="paginar2">
-  <ul>
-    <li>
-      <span class="fuera">Está usted en la página de resultados número </span>
-      <span class="current">1</span>
-    </li>
-    <li>
-      <a href="subastas_ava.php?accion=Mas&amp;id_busqueda=_SGFOTnU2NVlnSUwvd2czQzBFcHdoUDFlZTZGS1pLT1lwNm5pbmNIdmNGTXpLNUpZcXNGRElabzlLSGdEckkwL1NuQmpKT3lSd3Z2QTJiM0dPTURUNXBYOEhSNzhqRG5CdExSSXFxZkZSM1phdTh2bkIwUjRXaWFwdkJ2ZzNmVmV0NWc5NjJpU2FDdHQ1amc1SHJSUmhGTGFSTkk4dlFkSWYwTXA5ckFaRUh2TWtkcjM4UmFVY3VCa1JOcklEdWFDdFZpcC81Z0I4UVVYRDdqQjhLeW9RZ2R3aHpOMzRXY1cyZWJwZWRKSXY2RkRHRndmL2JIUXFQckVHdVYzUEh6VA,,-500-500">
-        <span class="pagSigxxx">2</span>
-      </a>
-    </li>
-    <li>
-      <a href="subastas_ava.php?accion=Mas&amp;id_busqueda=_SGFOTnU2NVlnSUwvd2czQzBFcHdoUDFlZTZGS1pLT1lwNm5pbmNIdmNGTXpLNUpZcXNGRElabzlLSGdEckkwL1NuQmpKT3lSd3Z2QTJiM0dPTURUNXBYOEhSNzhqRG5CdExSSXFxZkZSM1phdTh2bkIwUjRXaWFwdkJ2ZzNmVmV0NWc5NjJpU2FDdHQ1amc1SHJSUmhGTGFSTkk4dlFkSWYwTXA5ckFaRUh2TWtkcjM4UmFVY3VCa1JOcklEdWFDdFZpcC81Z0I4UVVYRDdqQjhLeW9RZ2R3aHpOMzRXY1cyZWJwZWRKSXY2RkRHRndmL2JIUXFQckVHdVYzUEh6VA,,-1000-500">
-        <span class="pagSigxxx">3</span>
-      </a>
-    </li>
-    <li>
-      <a href="subastas_ava.php?accion=Mas&amp;id_busqueda=_SGFOTnU2NVlnSUwvd2czQzBFcHdoUDFlZTZGS1pLT1lwNm5pbmNIdmNGTXpLNUpZcXNGRElabzlLSGdEckkwL1NuQmpKT3lSd3Z2QTJiM0dPTURUNXBYOEhSNzhqRG5CdExSSXFxZkZSM1phdTh2bkIwUjRXaWFwdkJ2ZzNmVmV0NWc5NjJpU2FDdHQ1amc1SHJSUmhGTGFSTkk4dlFkSWYwTXA5ckFaRUh2TWtkcjM4UmFVY3VCa1JOcklEdWFDdFZpcC81Z0I4UVVYRDdqQjhLeW9RZ2R3aHpOMzRXY1cyZWJwZWRKSXY2RkRHRndmL2JIUXFQckVHdVYzUEh6VA,,-500-500">
-        <span class="pagSig"><abbr title="Página">Pág.</abbr> siguiente</span>
-      </a>
-    </li>
-  </ul>
-</div></body>"#;
+        const INPUT: &str = r##"<body>
+        <div class="paginar">
+        <p>Resultados 1 a 500 de 1.572</p>
+      </div>
+      <div class="paginar2">
+        <ul>
+          <li>
+            <span class="fuera">Está usted en la página de resultados número </span>
+            <span class="current">1</span>
+          </li>
+          <li>
+            <a href="subastas_ava.php?accion=Mas&id_busqueda=_YjU3T1REVDZIbFlRRXkwMGhrRC9PZlorZ3RmRDVXL210ZXN4QU1aVWxpL2RjNDVLQldmR2tETFZNWnpmOUcxdXE4a2NBWnhtZ1NHWGxiVGxUdG1mQm1yKzArdk1nOW1IWEs0WTU4VTJnV01iZ1huaEVhSFVqbHplTkp4Nm5DV1RtMFVocDNiYThvbWZ4a1FYcm9lWDJCNFM4bUVHUnRKVWxDdmF5bXZSUVNFY3lGTytyQTlKMFBLUjNVejdVbUU1aW95ZTV3Q2RRbW5kOERKNkpZMDkwY3VkcVhoa3FhWERudXpuc0tSdXVaOTlZNTVwU1F6aWYrbmpWSmVBZERJUg,,-500-500">2</a>
+          </li>
+          <li>
+            <a href="subastas_ava.php?accion=Mas&id_busqueda=_YjU3T1REVDZIbFlRRXkwMGhrRC9PZlorZ3RmRDVXL210ZXN4QU1aVWxpL2RjNDVLQldmR2tETFZNWnpmOUcxdXE4a2NBWnhtZ1NHWGxiVGxUdG1mQm1yKzArdk1nOW1IWEs0WTU4VTJnV01iZ1huaEVhSFVqbHplTkp4Nm5DV1RtMFVocDNiYThvbWZ4a1FYcm9lWDJCNFM4bUVHUnRKVWxDdmF5bXZSUVNFY3lGTytyQTlKMFBLUjNVejdVbUU1aW95ZTV3Q2RRbW5kOERKNkpZMDkwY3VkcVhoa3FhWERudXpuc0tSdXVaOTlZNTVwU1F6aWYrbmpWSmVBZERJUg,,-1000-500">3</a>
+          </li>
+          <li>
+            <a href="subastas_ava.php?accion=Mas&id_busqueda=_YjU3T1REVDZIbFlRRXkwMGhrRC9PZlorZ3RmRDVXL210ZXN4QU1aVWxpL2RjNDVLQldmR2tETFZNWnpmOUcxdXE4a2NBWnhtZ1NHWGxiVGxUdG1mQm1yKzArdk1nOW1IWEs0WTU4VTJnV01iZ1huaEVhSFVqbHplTkp4Nm5DV1RtMFVocDNiYThvbWZ4a1FYcm9lWDJCNFM4bUVHUnRKVWxDdmF5bXZSUVNFY3lGTytyQTlKMFBLUjNVejdVbUU1aW95ZTV3Q2RRbW5kOERKNkpZMDkwY3VkcVhoa3FhWERudXpuc0tSdXVaOTlZNTVwU1F6aWYrbmpWSmVBZERJUg,,-1500-500">4</a>
+          </li>
+          <li>
+            <a href="subastas_ava.php?accion=Mas&id_busqueda=_YjU3T1REVDZIbFlRRXkwMGhrRC9PZlorZ3RmRDVXL210ZXN4QU1aVWxpL2RjNDVLQldmR2tETFZNWnpmOUcxdXE4a2NBWnhtZ1NHWGxiVGxUdG1mQm1yKzArdk1nOW1IWEs0WTU4VTJnV01iZ1huaEVhSFVqbHplTkp4Nm5DV1RtMFVocDNiYThvbWZ4a1FYcm9lWDJCNFM4bUVHUnRKVWxDdmF5bXZSUVNFY3lGTytyQTlKMFBLUjNVejdVbUU1aW95ZTV3Q2RRbW5kOERKNkpZMDkwY3VkcVhoa3FhWERudXpuc0tSdXVaOTlZNTVwU1F6aWYrbmpWSmVBZERJUg,,-500-500"><abbr title="Página">Pág.</abbr> siguiente</a>
+          </li>
+        </ul>
+      </div>
+    <div class="paginar">
+    <p class="linkSubir">
+      <a href="#top">subir</a>
+    </p>
+  </div>
+  <div class="paginar2">
+    <ul>
+      <li>
+        <span class="fuera">Está usted en la página de resultados número </span>
+        <span class="current">1</span>
+      </li>
+      <li>
+        <a href="subastas_ava.php?accion=Mas&id_busqueda=_YjU3T1REVDZIbFlRRXkwMGhrRC9PZlorZ3RmRDVXL210ZXN4QU1aVWxpL2RjNDVLQldmR2tETFZNWnpmOUcxdXE4a2NBWnhtZ1NHWGxiVGxUdG1mQm1yKzArdk1nOW1IWEs0WTU4VTJnV01iZ1huaEVhSFVqbHplTkp4Nm5DV1RtMFVocDNiYThvbWZ4a1FYcm9lWDJCNFM4bUVHUnRKVWxDdmF5bXZSUVNFY3lGTytyQTlKMFBLUjNVejdVbUU1aW95ZTV3Q2RRbW5kOERKNkpZMDkwY3VkcVhoa3FhWERudXpuc0tSdXVaOTlZNTVwU1F6aWYrbmpWSmVBZERJUg,,-500-500">2</a>
+      </li>
+      <li>
+        <a href="subastas_ava.php?accion=Mas&id_busqueda=_YjU3T1REVDZIbFlRRXkwMGhrRC9PZlorZ3RmRDVXL210ZXN4QU1aVWxpL2RjNDVLQldmR2tETFZNWnpmOUcxdXE4a2NBWnhtZ1NHWGxiVGxUdG1mQm1yKzArdk1nOW1IWEs0WTU4VTJnV01iZ1huaEVhSFVqbHplTkp4Nm5DV1RtMFVocDNiYThvbWZ4a1FYcm9lWDJCNFM4bUVHUnRKVWxDdmF5bXZSUVNFY3lGTytyQTlKMFBLUjNVejdVbUU1aW95ZTV3Q2RRbW5kOERKNkpZMDkwY3VkcVhoa3FhWERudXpuc0tSdXVaOTlZNTVwU1F6aWYrbmpWSmVBZERJUg,,-1000-500">3</a>
+      </li>
+      <li>
+        <a href="subastas_ava.php?accion=Mas&id_busqueda=_YjU3T1REVDZIbFlRRXkwMGhrRC9PZlorZ3RmRDVXL210ZXN4QU1aVWxpL2RjNDVLQldmR2tETFZNWnpmOUcxdXE4a2NBWnhtZ1NHWGxiVGxUdG1mQm1yKzArdk1nOW1IWEs0WTU4VTJnV01iZ1huaEVhSFVqbHplTkp4Nm5DV1RtMFVocDNiYThvbWZ4a1FYcm9lWDJCNFM4bUVHUnRKVWxDdmF5bXZSUVNFY3lGTytyQTlKMFBLUjNVejdVbUU1aW95ZTV3Q2RRbW5kOERKNkpZMDkwY3VkcVhoa3FhWERudXpuc0tSdXVaOTlZNTVwU1F6aWYrbmpWSmVBZERJUg,,-1500-500">4</a>
+      </li>
+      <li>
+        <a href="subastas_ava.php?accion=Mas&id_busqueda=_YjU3T1REVDZIbFlRRXkwMGhrRC9PZlorZ3RmRDVXL210ZXN4QU1aVWxpL2RjNDVLQldmR2tETFZNWnpmOUcxdXE4a2NBWnhtZ1NHWGxiVGxUdG1mQm1yKzArdk1nOW1IWEs0WTU4VTJnV01iZ1huaEVhSFVqbHplTkp4Nm5DV1RtMFVocDNiYThvbWZ4a1FYcm9lWDJCNFM4bUVHUnRKVWxDdmF5bXZSUVNFY3lGTytyQTlKMFBLUjNVejdVbUU1aW95ZTV3Q2RRbW5kOERKNkpZMDkwY3VkcVhoa3FhWERudXpuc0tSdXVaOTlZNTVwU1F6aWYrbmpWSmVBZERJUg,,-500-500"><abbr title="Página">Pág.</abbr> siguiente</a>
+      </li>
+    </ul>
+  </div></body>"##;
         let pages = parse_extra_pages(INPUT);
-        assert_eq!(2, pages.len());
-        assert_eq!(&"https://subastas.boe.es/subastas_ava.php?accion=Mas&id_busqueda=_SGFOTnU2NVlnSUwvd2czQzBFcHdoUDFlZTZGS1pLT1lwNm5pbmNIdmNGTXpLNUpZcXNGRElabzlLSGdEckkwL1NuQmpKT3lSd3Z2QTJiM0dPTURUNXBYOEhSNzhqRG5CdExSSXFxZkZSM1phdTh2bkIwUjRXaWFwdkJ2ZzNmVmV0NWc5NjJpU2FDdHQ1amc1SHJSUmhGTGFSTkk4dlFkSWYwTXA5ckFaRUh2TWtkcjM4UmFVY3VCa1JOcklEdWFDdFZpcC81Z0I4UVVYRDdqQjhLeW9RZ2R3aHpOMzRXY1cyZWJwZWRKSXY2RkRHRndmL2JIUXFQckVHdVYzUEh6VA,,-500-500",
+        assert_eq!(3, pages.len());
+        assert_eq!(&"https://subastas.boe.es/subastas_ava.php?accion=Mas&id_busqueda=_YjU3T1REVDZIbFlRRXkwMGhrRC9PZlorZ3RmRDVXL210ZXN4QU1aVWxpL2RjNDVLQldmR2tETFZNWnpmOUcxdXE4a2NBWnhtZ1NHWGxiVGxUdG1mQm1yKzArdk1nOW1IWEs0WTU4VTJnV01iZ1huaEVhSFVqbHplTkp4Nm5DV1RtMFVocDNiYThvbWZ4a1FYcm9lWDJCNFM4bUVHUnRKVWxDdmF5bXZSUVNFY3lGTytyQTlKMFBLUjNVejdVbUU1aW95ZTV3Q2RRbW5kOERKNkpZMDkwY3VkcVhoa3FhWERudXpuc0tSdXVaOTlZNTVwU1F6aWYrbmpWSmVBZERJUg,,-500-500",
                    pages.get(0).unwrap());
-        assert_eq!(&"https://subastas.boe.es/subastas_ava.php?accion=Mas&id_busqueda=_SGFOTnU2NVlnSUwvd2czQzBFcHdoUDFlZTZGS1pLT1lwNm5pbmNIdmNGTXpLNUpZcXNGRElabzlLSGdEckkwL1NuQmpKT3lSd3Z2QTJiM0dPTURUNXBYOEhSNzhqRG5CdExSSXFxZkZSM1phdTh2bkIwUjRXaWFwdkJ2ZzNmVmV0NWc5NjJpU2FDdHQ1amc1SHJSUmhGTGFSTkk4dlFkSWYwTXA5ckFaRUh2TWtkcjM4UmFVY3VCa1JOcklEdWFDdFZpcC81Z0I4UVVYRDdqQjhLeW9RZ2R3aHpOMzRXY1cyZWJwZWRKSXY2RkRHRndmL2JIUXFQckVHdVYzUEh6VA,,-1000-500",
+        assert_eq!(&"https://subastas.boe.es/subastas_ava.php?accion=Mas&id_busqueda=_YjU3T1REVDZIbFlRRXkwMGhrRC9PZlorZ3RmRDVXL210ZXN4QU1aVWxpL2RjNDVLQldmR2tETFZNWnpmOUcxdXE4a2NBWnhtZ1NHWGxiVGxUdG1mQm1yKzArdk1nOW1IWEs0WTU4VTJnV01iZ1huaEVhSFVqbHplTkp4Nm5DV1RtMFVocDNiYThvbWZ4a1FYcm9lWDJCNFM4bUVHUnRKVWxDdmF5bXZSUVNFY3lGTytyQTlKMFBLUjNVejdVbUU1aW95ZTV3Q2RRbW5kOERKNkpZMDkwY3VkcVhoa3FhWERudXpuc0tSdXVaOTlZNTVwU1F6aWYrbmpWSmVBZERJUg,,-1000-500",
                    pages.get(1).unwrap());
+        assert_eq!(&"https://subastas.boe.es/subastas_ava.php?accion=Mas&id_busqueda=_YjU3T1REVDZIbFlRRXkwMGhrRC9PZlorZ3RmRDVXL210ZXN4QU1aVWxpL2RjNDVLQldmR2tETFZNWnpmOUcxdXE4a2NBWnhtZ1NHWGxiVGxUdG1mQm1yKzArdk1nOW1IWEs0WTU4VTJnV01iZ1huaEVhSFVqbHplTkp4Nm5DV1RtMFVocDNiYThvbWZ4a1FYcm9lWDJCNFM4bUVHUnRKVWxDdmF5bXZSUVNFY3lGTytyQTlKMFBLUjNVejdVbUU1aW95ZTV3Q2RRbW5kOERKNkpZMDkwY3VkcVhoa3FhWERudXpuc0tSdXVaOTlZNTVwU1F6aWYrbmpWSmVBZERJUg,,-1500-500",
+                   pages.get(2).unwrap());
     }
 
     #[test]
