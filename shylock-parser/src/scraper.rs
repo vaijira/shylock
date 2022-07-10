@@ -35,9 +35,25 @@ impl UrlFetcher {
     }
 
     pub(crate) fn get_url(&self, target: &str) -> Result<String, Box<dyn std::error::Error>> {
-        let body = self.client.get(target).send()?.error_for_status()?.text()?;
+        let mut retries = 3;
+        while retries > 0 {
+            match self.client.get(target).send() {
+                Ok(value) => {
+                    let body = value.error_for_status()?.text()?;
+                    return Ok(body);
+                }
+                Err(value) => {
+                    retries -= 1;
+                    if retries > 0 {
+                        continue;
+                    } else {
+                        return Err(Box::new(value));
+                    }
+                }
+            }
+        }
 
-        Ok(body)
+        Ok("".to_string())
     }
 }
 

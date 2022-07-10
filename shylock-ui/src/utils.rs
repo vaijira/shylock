@@ -15,9 +15,9 @@ pub fn get_external_url(auction_id: &str) -> String {
 
 pub fn is_targeted_asset(bidinfo: &Option<BidInfo>, auction_id: &str) -> bool {
     let bidinfo = get_bidinfo(bidinfo, auction_id);
-    let target_value = &bidinfo.value.to_f64().or(Some(0.0)).unwrap() * 0.7;
+    let target_value = &bidinfo.value.to_f64().unwrap_or(0.0) * 0.7;
 
-    target_value > bidinfo.claim_quantity.to_f64().or(Some(0.0)).unwrap()
+    target_value > bidinfo.claim_quantity.to_f64().unwrap_or(0.0)
 }
 
 pub fn get_bidinfo<'a>(bidinfo: &'a Option<BidInfo>, auction_id: &str) -> &'a BidInfo {

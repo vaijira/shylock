@@ -14,8 +14,8 @@ const NOT_APPLICABLE: &str = "NA";
 fn get_clean_text(data: &HashMap<BoeConcept, String>, field: &BoeConcept) -> String {
     if let Some(field_str) = data.get(field) {
         field_str
-            .replace(",", ", ")
-            .replace(".", ". ")
+            .replace(',', ", ")
+            .replace('.', ". ")
             .replace("  ", " ")
             .trim()
             .to_string()
@@ -26,7 +26,7 @@ fn get_clean_text(data: &HashMap<BoeConcept, String>, field: &BoeConcept) -> Str
 
 fn get_date(data: &HashMap<BoeConcept, String>, field: &BoeConcept) -> NaiveDate {
     if let Some(date_str) = data.get(field) {
-        let space_offset = date_str.find(' ').unwrap_or_else(|| date_str.len());
+        let space_offset = date_str.find(' ').unwrap_or(date_str.len());
         NaiveDate::parse_from_str(&date_str[..space_offset], "%d-%m-%Y").unwrap()
     } else {
         NaiveDate::parse_from_str("01-01-2000", "%d-%m-%Y").unwrap()
@@ -35,7 +35,7 @@ fn get_date(data: &HashMap<BoeConcept, String>, field: &BoeConcept) -> NaiveDate
 
 fn get_vehicle_date(data: &HashMap<BoeConcept, String>, field: &BoeConcept) -> NaiveDate {
     if let Some(date_str) = data.get(field) {
-        let date_str = date_str.replace("/", "-");
+        let date_str = date_str.replace('/', "-");
         match NaiveDate::parse_from_str(&date_str[..], "%Y-%m-%d") {
             Ok(date) => date,
             Err(_) => match NaiveDate::parse_from_str(&date_str[..], "%d-%m-%Y") {
@@ -57,7 +57,7 @@ fn get_vehicle_date(data: &HashMap<BoeConcept, String>, field: &BoeConcept) -> N
 
 fn get_decimal(data: &HashMap<BoeConcept, String>, field: &BoeConcept) -> Decimal {
     if let Some(decimal_str) = data.get(field) {
-        let space_offset = decimal_str.find(' ').unwrap_or_else(|| decimal_str.len());
+        let space_offset = decimal_str.find(' ').unwrap_or(decimal_str.len());
         let result = str::replace(&decimal_str[..space_offset], ".", "");
         let result = str::replace(&result[..], ",", "");
         Decimal::new(result.parse::<i64>().unwrap_or(0), DEFAULT_DECIMALS)

@@ -181,7 +181,7 @@ pub(crate) fn parse_extra_pages(main_page: &str) -> Vec<String> {
         let results = words
             .last()
             .expect("number")
-            .replace(".", "")
+            .replace('.', "")
             .parse::<u32>()
             .unwrap();
         (results / RESULTS_PER_PAGE) + 1
