@@ -34,7 +34,7 @@ macro_rules! auction_provinces {
         )+
     ) => {
         /// Type of provinces
-        #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize)]
+        #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, sqlx::Type)]
         pub enum Province {
             $(
                 $(#[$docs])*

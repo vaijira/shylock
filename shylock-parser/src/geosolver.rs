@@ -3,33 +3,23 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use std::{borrow::Cow, thread, time};
 
-use crate::scraper::APP_USER_AGENT;
+use crate::http::{BlockingUrlFetcher, HttpClient};
 
 const NOMINATIN_OSM_URL: &str = "https://nominatim.openstreetmap.org/search.php";
 
 pub(crate) struct GeoSolver {
-    client: reqwest::blocking::Client,
+    client: BlockingUrlFetcher,
 }
 
 impl GeoSolver {
     pub(crate) fn new() -> Self {
         GeoSolver {
-            client: reqwest::blocking::Client::builder()
-                .connect_timeout(std::time::Duration::from_secs(10))
-                .timeout(std::time::Duration::from_secs(10))
-                .user_agent(APP_USER_AGENT)
-                .tcp_nodelay(true)
-                .tcp_keepalive(std::time::Duration::from_secs(60))
-                .cookie_store(true)
-                .pool_max_idle_per_host(10)
-                .gzip(true)
-                .build()
-                .unwrap(),
+            client: BlockingUrlFetcher::new(),
         }
     }
 
     fn get_url(&self, target: &str) -> Result<String, Box<dyn std::error::Error>> {
-        let body = self.client.get(target).send()?.error_for_status()?.text()?;
+        let body = self.client.get_url(target)?;
 
         Ok(body)
     }
@@ -69,6 +59,7 @@ impl GeoSolver {
         log::debug!("Coordinates x: {}, y: {}", x, y);
         Ok(Some(Point::new(x, y)))
     }
+
     pub(crate) fn resolve(
         &self,
         address: &str,

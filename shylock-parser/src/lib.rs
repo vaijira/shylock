@@ -16,8 +16,12 @@
 extern crate lazy_static;
 
 mod geosolver;
-pub(crate) mod parser;
-mod scraper;
+/// Module communicating through http to BOE website
+pub mod http;
+/// Module to parse HTML BOE pages
+pub mod parser;
+/// Module to browse BOE website.
+pub mod scraper;
 
 pub use self::scraper::scrape;
 pub use chrono::NaiveDate;

@@ -17,7 +17,7 @@ impl InvalidBoeConcept {
 
 impl fmt::Display for InvalidBoeConcept {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Unkown BOE concept: {}", &self.concept[..])
+        write!(f, "Unknown BOE concept: {}", &self.concept[..])
     }
 }
 
@@ -31,7 +31,7 @@ macro_rules! boe_auction_concepts {
         )+
     ) => {
         /// Type of BOE concepts
-        #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
+        #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, sqlx::Type)]
         pub enum BoeConcept {
             $(
                 $(#[$docs])*
@@ -86,6 +86,9 @@ macro_rules! boe_auction_concepts {
 }
 
 boe_auction_concepts! {
+    /// Account record
+    (AccountRecord, "CUENTA EXPEDIENTE");
+
     /// Acquisition date
     (AcquisitionDate, "FECHA ADQUISICIÓN");
 

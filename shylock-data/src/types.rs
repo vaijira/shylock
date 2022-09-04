@@ -7,6 +7,7 @@ use geo_types::Point;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::str::FromStr;
 
 pub(crate) const DEFAULT_DECIMALS: u32 = 2;
 const NOT_APPLICABLE: &str = "NA";
@@ -99,7 +100,7 @@ fn get_lot_auction_kind(data: &HashMap<BoeConcept, String>) -> LotAuctionKind {
 }
 
 /// Manager information to contact for information about the auction.
-#[derive(Debug, Eq, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Eq, PartialEq, Deserialize, Serialize, sqlx::FromRow)]
 pub struct Management {
     /// Management code
     pub code: String,
@@ -145,7 +146,7 @@ impl Management {
 }
 
 /// Bid information struct
-#[derive(Debug, Eq, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Eq, PartialEq, Deserialize, Serialize, sqlx::Type)]
 pub struct BidInfo {
     /// Valuation of the assets.
     pub appraisal: Decimal,
@@ -175,8 +176,41 @@ impl BidInfo {
     }
 }
 
+impl ToString for BidInfo {
+    fn to_string(&self) -> String {
+        format!(
+            "{}|{}|{}|{}|{}|{}",
+            self.appraisal,
+            self.bid_step,
+            self.claim_quantity,
+            self.deposit,
+            self.minimum_bid,
+            self.value
+        )
+    }
+}
+
+impl FromStr for BidInfo {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let v: Vec<&str> = s.split('|').collect();
+        if v.len() != 6 {
+            return Err(());
+        }
+        Ok(BidInfo {
+            appraisal: v[0].parse::<Decimal>().unwrap(),
+            bid_step: v[1].parse::<Decimal>().unwrap(),
+            claim_quantity: v[2].parse::<Decimal>().unwrap(),
+            deposit: v[3].parse::<Decimal>().unwrap(),
+            minimum_bid: v[4].parse::<Decimal>().unwrap(),
+            value: v[5].parse::<Decimal>().unwrap(),
+        })
+    }
+}
+
 /// All posible kind of auctions.
-#[derive(Debug, Eq, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Eq, PartialEq, Deserialize, Serialize, sqlx::Type)]
 pub enum AuctionKind {
     /// Tax agency auction
     TaxAgency, // AGENCIA TRIBUTARIA
@@ -197,7 +231,7 @@ pub enum AuctionKind {
 }
 
 /// Type of auction kind when it contains lots
-#[derive(Debug, Eq, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Eq, PartialEq, Deserialize, Serialize, sqlx::Type)]
 pub enum LotAuctionKind {
     /// Auction without lots
     NotApplicable,
@@ -207,11 +241,63 @@ pub enum LotAuctionKind {
     Splitted,
 }
 
+/// Auction state
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Deserialize, Serialize, sqlx::Type)]
+pub enum AuctionState {
+    /// Cancelled auction
+    Cancelled,
+    /// Finished auction
+    Finished,
+    /// Soon to be opened auction
+    ToBeOpened,
+    /// Ongoing auction
+    Ongoing,
+    /// Suspended auction
+    Suspended,
+    /// Unknown state for auction
+    Unknown,
+}
+
+impl FromStr for AuctionState {
+    type Err = ();
+
+    #[inline]
+    fn from_str(s: &str) -> Result<Self, ()> {
+        let s: String = s
+            .to_uppercase()
+            .replace(' ', "")
+            .chars()
+            .map(|x| match x {
+                'Á' => 'A',
+                'É' => 'E',
+                'Í' => 'I',
+                'Ó' => 'O',
+                'Ú' => 'U',
+                _ => x,
+            })
+            .collect();
+
+        match &s[..] {
+            "CANCELADA" => Ok(AuctionState::Cancelled),
+            "CELEBRANDOSE" => Ok(AuctionState::Ongoing),
+            "CONCLUIDA" | "FINALIZADA" => Ok(AuctionState::Finished),
+            "PROXIMA" => Ok(AuctionState::ToBeOpened),
+            "SUSPENDIDA" => Ok(AuctionState::Suspended),
+            _ => {
+                log::warn!("Auction State ->{}<- unknown", s);
+                Ok(AuctionState::Unknown)
+            }
+        }
+    }
+}
+
 /// Auction struct
-#[derive(Debug, Eq, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Eq, PartialEq, Deserialize, Serialize, sqlx::FromRow)]
 pub struct Auction {
     /// Auction unique identifier.
     pub id: String,
+    /// Auction state
+    pub auction_state: AuctionState,
     /// Type of auction classified by entity.
     pub kind: AuctionKind,
     /// Quantity that is claimed by creditors.
@@ -234,7 +320,11 @@ pub struct Auction {
 
 impl Auction {
     /// Create a new Auction
-    pub fn new(data: &HashMap<BoeConcept, String>, management: Management) -> Auction {
+    pub fn new(
+        data: &HashMap<BoeConcept, String>,
+        management: Management,
+        auction_state: AuctionState,
+    ) -> Auction {
         let lots: u32 = data
             .get(&BoeConcept::Lots)
             .unwrap_or(&"0".to_owned())
@@ -246,6 +336,7 @@ impl Auction {
                 .get(&BoeConcept::Identifier)
                 .unwrap_or(&String::from(NOT_APPLICABLE))
                 .to_string(),
+            auction_state,
             kind: get_auction_kind(data),
             claim_quantity: get_decimal(data, &BoeConcept::ClaimQuantity),
             lots,
@@ -263,7 +354,7 @@ impl Auction {
 }
 
 /// Property can be any real state property: apartment, garage lot, industrial ...
-#[derive(Debug, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, PartialEq, Deserialize, Serialize, sqlx::FromRow)]
 pub struct Property {
     /// Address location.
     pub address: String,
@@ -363,7 +454,7 @@ impl Property {
 }
 
 /// Any kind of vehicle
-#[derive(Debug, Eq, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Eq, PartialEq, Deserialize, Serialize, sqlx::FromRow)]
 pub struct Vehicle {
     /// Auction identifier is linked to.
     pub auction_id: String,
@@ -439,7 +530,7 @@ impl Vehicle {
 }
 
 /// Any asset that is not a vehicle or a property.
-#[derive(Debug, Eq, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Eq, PartialEq, Deserialize, Serialize, sqlx::FromRow)]
 pub struct Other {
     /// Any asset additional information.
     pub additional_information: String,
@@ -560,6 +651,30 @@ impl Asset {
     }
 }
 
+/*impl Type<Sqlite> for Decimal {
+
+}*/
+/*
+impl<'q> Encode<'q, Sqlite> for Decimal {
+    fn encode(self, args: &mut Vec<SqliteArgumentValue<'q>>) -> IsNull {
+        args.push(SqliteArgumentValue::Text(self.to_string()));
+
+        IsNull::No
+    }
+
+    fn encode_by_ref(&self, args: &mut Vec<SqliteArgumentValue<'q>>) -> IsNull {
+        args.push(SqliteArgumentValue::Text(self.to_string()));
+
+        IsNull::No
+    }
+}
+
+impl<'r> Decode<'r, Sqlite> for Decimal {
+    fn decode(value: SqliteValueRef<'r>) -> Result<Decimal, BoxDynError> {
+        Ok(Decimal::from_str(value.text()).unwrap())
+    }
+}*/
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -678,6 +793,7 @@ mod tests {
 
         let auc = Auction {
             id: String::from("SUB-NE-2020-465937"),
+            auction_state: AuctionState::Unknown,
             kind: AuctionKind::NotaryExtraJudicial,
             claim_quantity: Decimal::new(8_197_157, DEFAULT_DECIMALS),
             lots: 0,
@@ -698,7 +814,7 @@ mod tests {
             email: String::from("SUBASTAS.MURCIA@JUSTICIA.ES"),
         };
 
-        assert_eq!(auc, Auction::new(&auction, mgm));
+        assert_eq!(auc, Auction::new(&auction, mgm, AuctionState::Unknown));
     }
 
     #[test]

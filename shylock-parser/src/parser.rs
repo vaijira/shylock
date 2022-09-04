@@ -1,9 +1,10 @@
-use crate::scraper::BASE_BOE_URL;
+use crate::http::BASE_BOE_URL;
 use scraper::{Html, Selector};
-use shylock_data::concepts::BoeConcept;
+use shylock_data::{concepts::BoeConcept, AuctionState};
 use std::collections::HashMap;
 
 const RESULTS_PER_PAGE: u32 = 500;
+const AUCTION_STATE_STR: &str = "Estado: ";
 
 fn parse_html_table(
     page: &str,
@@ -40,7 +41,9 @@ fn parse_html_table(
     Ok(result)
 }
 
-pub(crate) fn parse_management_auction_page(
+/// It parses a `page` containing the auction management information and
+/// returns the different boe concepts and values in a hashmap
+pub fn parse_management_auction_page(
     page: &str,
 ) -> Result<HashMap<BoeConcept, String>, Box<dyn std::error::Error>> {
     parse_html_table(
@@ -50,7 +53,9 @@ pub(crate) fn parse_management_auction_page(
     )
 }
 
-pub(crate) fn parse_asset_auction_page(
+/// It parses a `page` containing the auction assets information and
+/// returns the different boe concepts and values in a hashmap
+pub fn parse_asset_auction_page(
     page: &str,
 ) -> Result<HashMap<BoeConcept, String>, Box<dyn std::error::Error>> {
     let h4_selector = &Selector::parse("h4").expect("h4 selector creation failed");
@@ -74,9 +79,8 @@ pub(crate) fn parse_asset_auction_page(
     Ok(result)
 }
 
-pub(crate) fn parse_lot_auction_page_links(
-    page: &str,
-) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+/// It parses lot auction `page` and return the links for each lot or error.
+pub fn parse_lot_auction_page_links(page: &str) -> Result<Vec<String>, Box<dyn std::error::Error>> {
     let mut result = Vec::new();
 
     let doc = Html::parse_document(page);
@@ -98,7 +102,8 @@ pub(crate) fn parse_lot_auction_page_links(
     Ok(result)
 }
 
-pub(crate) fn parse_lot_auction_page(
+/// It parses lot `i` in lot auction `page` returning the concepts or error.
+pub fn parse_lot_auction_page(
     page: &str,
     i: usize,
 ) -> Result<HashMap<BoeConcept, String>, Box<dyn std::error::Error>> {
@@ -123,7 +128,8 @@ pub(crate) fn parse_lot_auction_page(
     Ok(result)
 }
 
-pub(crate) fn parse_main_auction_links(
+/// It parses main auction `page` returning the links for auction and management or error.
+pub fn parse_main_auction_links(
     page: &str,
 ) -> Result<(String, String), Box<dyn std::error::Error>> {
     let doc = Html::parse_document(page);
@@ -158,7 +164,9 @@ pub(crate) fn parse_main_auction_links(
     ))
 }
 
-pub(crate) fn parse_main_auction_page(
+/// It parses a `page` containing the main auction information and
+/// returns the different boe concepts and values in a hashmap
+pub fn parse_main_auction_page(
     page: &str,
 ) -> Result<HashMap<BoeConcept, String>, Box<dyn std::error::Error>> {
     parse_html_table(
@@ -168,7 +176,8 @@ pub(crate) fn parse_main_auction_page(
     )
 }
 
-pub(crate) fn parse_extra_pages(main_page: &str) -> Vec<String> {
+/// It parses `main_page` to determine the total number of auctions pages, it returns their links.
+pub fn parse_extra_pages(main_page: &str) -> Vec<String> {
     let mut result = Vec::new();
     let doc = Html::parse_document(main_page);
     let pages_number_p =
@@ -216,18 +225,41 @@ pub(crate) fn parse_extra_pages(main_page: &str) -> Vec<String> {
     result
 }
 
-pub(crate) fn parse_result_page(page: &str) -> Vec<String> {
+/// It parses auction result `page` to return a Vec with tuples with auctions links and state
+///
+/// #Panics
+///
+/// Panics if not found links or state in page for any result.
+pub fn parse_result_page(page: &str) -> Vec<(String, AuctionState)> {
     let mut result = Vec::new();
 
     let doc = Html::parse_document(page);
 
+    let li_results = Selector::parse("li.resultado-busqueda")
+        .expect("Didn't find class resultado-busqueda por li elements");
     let auction_anchors = Selector::parse("a.resultado-busqueda-link-otro")
         .expect("a.resultado-busueda-link-otro selector creation failed");
 
-    for auction_anchor in doc.select(&auction_anchors) {
-        if let Some(href) = auction_anchor.value().attr("href") {
-            result.push(BASE_BOE_URL.to_owned() + href);
-        }
+    for li_result in doc.select(&li_results) {
+        let auction_anchor = li_result
+            .select(&auction_anchors)
+            .next()
+            .expect("Unable to find auction link");
+        let auction_link = match auction_anchor.value().attr("href") {
+            Some(href) => BASE_BOE_URL.to_owned() + href,
+            None => panic!("Not empty link auction allow"),
+        };
+        let text = li_result.text().collect::<String>();
+        let auction_state = match &text[..].find(AUCTION_STATE_STR) {
+            Some(index) => {
+                let begin = index + AUCTION_STATE_STR.len();
+                let end = begin + text[begin..].find(char::is_whitespace).unwrap();
+                text[begin..end].parse::<AuctionState>().unwrap()
+            }
+            None => AuctionState::Unknown,
+        };
+
+        result.push((auction_link, auction_state));
     }
 
     result
@@ -864,9 +896,9 @@ mod tests {
 </div>"#;
 
         let links = vec![
-            BASE_BOE_URL.to_owned() + "./detalleSubasta.php?idSub=SUB-JA-2020-146153&idBus=_SGFOTnU2NVlnSUwvd2czQzBFcHdoUDFlZTZGS1pLT1lwNm5pbmNIdmNGTXpLNUpZcXNGRElabzlLSGdEckkwL1NuQmpKT3lSd3Z2QTJiM0dPTURUNXBYOEhSNzhqRG5CdExSSXFxZkZSM1phdTh2bkIwUjRXaWFwdkJ2ZzNmVmV0NWc5NjJpU2FDdHQ1amc1SHJSUmhGTGFSTkk4dlFkSWYwTXA5ckFaRUh2TWtkcjM4UmFVY3VCa1JOcklEdWFDdFZpcC81Z0I4UVVYRDdqQjhLeW9RZ2R3aHpOMzRXY1cyZWJwZWRKSXY2RkRHRndmL2JIUXFQckVHdVYzUEh6VA,,",
-            BASE_BOE_URL.to_owned() + "./detalleSubasta.php?idSub=SUB-JA-2020-149625&idBus=_SGFOTnU2NVlnSUwvd2czQzBFcHdoUDFlZTZGS1pLT1lwNm5pbmNIdmNGTXpLNUpZcXNGRElabzlLSGdEckkwL1NuQmpKT3lSd3Z2QTJiM0dPTURUNXBYOEhSNzhqRG5CdExSSXFxZkZSM1phdTh2bkIwUjRXaWFwdkJ2ZzNmVmV0NWc5NjJpU2FDdHQ1amc1SHJSUmhGTGFSTkk4dlFkSWYwTXA5ckFaRUh2TWtkcjM4UmFVY3VCa1JOcklEdWFDdFZpcC81Z0I4UVVYRDdqQjhLeW9RZ2R3aHpOMzRXY1cyZWJwZWRKSXY2RkRHRndmL2JIUXFQckVHdVYzUEh6VA,,",
-            BASE_BOE_URL.to_owned() + "./detalleSubasta.php?idSub=SUB-AT-2020-20R4186001070&idBus=_SGFOTnU2NVlnSUwvd2czQzBFcHdoUDFlZTZGS1pLT1lwNm5pbmNIdmNGTXpLNUpZcXNGRElabzlLSGdEckkwL1NuQmpKT3lSd3Z2QTJiM0dPTURUNXBYOEhSNzhqRG5CdExSSXFxZkZSM1phdTh2bkIwUjRXaWFwdkJ2ZzNmVmV0NWc5NjJpU2FDdHQ1amc1SHJSUmhGTGFSTkk4dlFkSWYwTXA5ckFaRUh2TWtkcjM4UmFVY3VCa1JOcklEdWFDdFZpcC81Z0I4UVVYRDdqQjhLeW9RZ2R3aHpOMzRXY1cyZWJwZWRKSXY2RkRHRndmL2JIUXFQckVHdVYzUEh6VA,,"];
+            (BASE_BOE_URL.to_owned() + "./detalleSubasta.php?idSub=SUB-JA-2020-146153&idBus=_SGFOTnU2NVlnSUwvd2czQzBFcHdoUDFlZTZGS1pLT1lwNm5pbmNIdmNGTXpLNUpZcXNGRElabzlLSGdEckkwL1NuQmpKT3lSd3Z2QTJiM0dPTURUNXBYOEhSNzhqRG5CdExSSXFxZkZSM1phdTh2bkIwUjRXaWFwdkJ2ZzNmVmV0NWc5NjJpU2FDdHQ1amc1SHJSUmhGTGFSTkk4dlFkSWYwTXA5ckFaRUh2TWtkcjM4UmFVY3VCa1JOcklEdWFDdFZpcC81Z0I4UVVYRDdqQjhLeW9RZ2R3aHpOMzRXY1cyZWJwZWRKSXY2RkRHRndmL2JIUXFQckVHdVYzUEh6VA,,", AuctionState::Ongoing),
+            (BASE_BOE_URL.to_owned() + "./detalleSubasta.php?idSub=SUB-JA-2020-149625&idBus=_SGFOTnU2NVlnSUwvd2czQzBFcHdoUDFlZTZGS1pLT1lwNm5pbmNIdmNGTXpLNUpZcXNGRElabzlLSGdEckkwL1NuQmpKT3lSd3Z2QTJiM0dPTURUNXBYOEhSNzhqRG5CdExSSXFxZkZSM1phdTh2bkIwUjRXaWFwdkJ2ZzNmVmV0NWc5NjJpU2FDdHQ1amc1SHJSUmhGTGFSTkk4dlFkSWYwTXA5ckFaRUh2TWtkcjM4UmFVY3VCa1JOcklEdWFDdFZpcC81Z0I4UVVYRDdqQjhLeW9RZ2R3aHpOMzRXY1cyZWJwZWRKSXY2RkRHRndmL2JIUXFQckVHdVYzUEh6VA,,", AuctionState::Ongoing),
+            (BASE_BOE_URL.to_owned() + "./detalleSubasta.php?idSub=SUB-AT-2020-20R4186001070&idBus=_SGFOTnU2NVlnSUwvd2czQzBFcHdoUDFlZTZGS1pLT1lwNm5pbmNIdmNGTXpLNUpZcXNGRElabzlLSGdEckkwL1NuQmpKT3lSd3Z2QTJiM0dPTURUNXBYOEhSNzhqRG5CdExSSXFxZkZSM1phdTh2bkIwUjRXaWFwdkJ2ZzNmVmV0NWc5NjJpU2FDdHQ1amc1SHJSUmhGTGFSTkk4dlFkSWYwTXA5ckFaRUh2TWtkcjM4UmFVY3VCa1JOcklEdWFDdFZpcC81Z0I4UVVYRDdqQjhLeW9RZ2R3aHpOMzRXY1cyZWJwZWRKSXY2RkRHRndmL2JIUXFQckVHdVYzUEh6VA,,", AuctionState::Ongoing)];
 
         assert_eq!(links, parse_result_page(INPUT));
     }

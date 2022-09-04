@@ -34,7 +34,7 @@ macro_rules! property_categories {
         )+
     ) => {
         /// Type of provinces
-        #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize)]
+        #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, sqlx::Type)]
         pub enum PropertyCategory {
             $(
                 $(#[$docs])*
@@ -159,7 +159,7 @@ macro_rules! vehicle_categories {
         )+
     ) => {
         /// Type of provinces
-        #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize)]
+        #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, sqlx::Type)]
         pub enum VehicleCategory {
             $(
                 $(#[$docs])*
@@ -269,7 +269,7 @@ macro_rules! other_categories {
         )+
     ) => {
         /// Type of provinces
-        #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize)]
+        #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, sqlx::Type)]
         pub enum OtherCategory {
             $(
                 $(#[$docs])*
