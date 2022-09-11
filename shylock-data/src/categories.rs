@@ -299,6 +299,7 @@ macro_rules! other_categories {
                     $name => Ok(OtherCategory::$konst) ,
                     )+
                     "" => Ok(OtherCategory::Other),
+                    "INDUSTRIALES" | "NAVEINDUSTRIAL" => Ok(OtherCategory::Industrial),
                     _ => Err(InvalidCategory::new(s)),
                 }
             }
@@ -355,6 +356,9 @@ macro_rules! other_categories {
 }
 
 other_categories! {
+    /// Airplane
+    (Airplane, "AERONAVES", "Aeronaves");
+
     /// Antiques
     (Antiques, "JOYAS,OBRASDEARTEYANTIGÜEDADES", "Joyas, obras de arte y antigüedades");
 
@@ -373,8 +377,17 @@ other_categories! {
     /// Furniture
     (Furniture, "MOBILIARIO", "Mobiliario");
 
+    /// Housing
+    (Housing, "VIVIENDA", "Vivienda");
+
+    /// Industrial
+    (Industrial, "INDUSTRIAL", "Industrial");
+
     /// Industrial rights
     (IndustrialRights, "DERECHOSDEPROPIEDADINDUSTRIAL", "Derechos de propiedad industrial");
+
+    /// Intellectual rights
+    (IntellectualRights, "DERECHOSDEPROPIEDADINTELECTUAL", "Derechos de propiedad intelectual");
 
     /// Machinery
     (Machinery, "MAQUINARIA", "Maquinaria");
@@ -388,8 +401,29 @@ other_categories! {
     /// Plants
     (Plant, "INSTALACIONES", "Instalación");
 
+    /// Plot of land
+    (PlotOfLand, "SOLAR", "Solar");
+
+    /// Rustic property
+    (RusticProperty, "FINCARUSTICA", "Finca rústica");
+
+    /// Store room
+    (StoreRoom, "TRASTERO", "Trastero");
+
     /// Tools
     (Tools, "UTENSILIOSYHERRAMIENTAS", "Utensilios y herramientas");
+
+    /// Transfer rights
+    (TransferRights, "DERECHOSDETRASPASO", "Derechos de traspaso");
+
+    /// Transportation cards
+    (TransportationCards, "TARJETASDETRANSPORTE", "Tarjetas de transporte");
+
+    /// Transportation rights
+    (TransportationRights, "DERECHOSDETRANSPORTE", "Derechos de transporte");
+
+    /// Tramway
+    (Tramway, "TRANVIA", "Tranvía");
 
     /// Vessels
     (Vessel, "BUQUES", "Buque");

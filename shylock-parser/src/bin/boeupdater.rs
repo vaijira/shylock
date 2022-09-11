@@ -297,7 +297,7 @@ async fn scrape(sqlite_pool: &Pool<Sqlite>) -> Result<(), Box<dyn std::error::Er
     let stream = stream::iter(pages_url.iter().enumerate());
 
     stream
-        .for_each_concurrent(5, |page| async move {
+        .for_each_concurrent(6, |page| async move {
             if let Ok((ok, err, already_proccessed)) =
                 page_scraper(http_client, sqlite_pool, page.1).await
             {

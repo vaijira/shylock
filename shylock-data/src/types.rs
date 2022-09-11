@@ -651,30 +651,6 @@ impl Asset {
     }
 }
 
-/*impl Type<Sqlite> for Decimal {
-
-}*/
-/*
-impl<'q> Encode<'q, Sqlite> for Decimal {
-    fn encode(self, args: &mut Vec<SqliteArgumentValue<'q>>) -> IsNull {
-        args.push(SqliteArgumentValue::Text(self.to_string()));
-
-        IsNull::No
-    }
-
-    fn encode_by_ref(&self, args: &mut Vec<SqliteArgumentValue<'q>>) -> IsNull {
-        args.push(SqliteArgumentValue::Text(self.to_string()));
-
-        IsNull::No
-    }
-}
-
-impl<'r> Decode<'r, Sqlite> for Decimal {
-    fn decode(value: SqliteValueRef<'r>) -> Result<Decimal, BoxDynError> {
-        Ok(Decimal::from_str(value.text()).unwrap())
-    }
-}*/
-
 #[cfg(test)]
 mod tests {
     use super::*;
