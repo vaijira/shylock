@@ -4,6 +4,7 @@ use futures::*;
 use shylock_data::types::{Asset, Auction, LotAuctionKind, Management, Other, Property, Vehicle};
 use shylock_parser::{
     http::{UrlFetcher, MAIN_ALL_AUCTIONS_BOE_URL},
+    scraper::AUCTION_LOT_NUMBER_STR,
     AuctionState,
 };
 use sqlx::{
@@ -215,11 +216,20 @@ async fn process_auction_link(
         }
         LotAuctionKind::Joined | LotAuctionKind::Splitted => {
             let lot_links = shylock_parser::parser::parse_lot_auction_page_links(&asset_page)?;
-            for (i, lot_link) in lot_links.iter().enumerate() {
+            for lot_link in lot_links.iter() {
                 let lot_page = url_fetcher.get_url(lot_link).await?;
+
+                let lot_id_begin =
+                    lot_link.find(AUCTION_LOT_NUMBER_STR).unwrap() + AUCTION_LOT_NUMBER_STR.len();
+                let lot_id_end = lot_link[lot_id_begin..].find('&').unwrap() + lot_id_begin;
+                let lot_id = &lot_link[lot_id_begin..lot_id_end];
+
                 let asset = Asset::new(
                     &auction.id,
-                    &shylock_parser::parser::parse_lot_auction_page(&lot_page, i + 1)?,
+                    &shylock_parser::parser::parse_lot_auction_page(
+                        &lot_page,
+                        lot_id.parse::<usize>().unwrap(),
+                    )?,
                 );
                 assets.push(asset);
             }

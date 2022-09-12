@@ -7,6 +7,9 @@ use std::collections::HashMap;
 
 const DEFAULT_COUNTRY: &str = "Spain";
 
+/// Constant for parsing lot number @TODO make pub(crate) in future
+pub const AUCTION_LOT_NUMBER_STR: &str = "idLote=";
+
 fn get_auctions_links(
     url_fetcher: &dyn HttpClient,
 ) -> Result<Vec<(String, AuctionState)>, Box<dyn std::error::Error>> {
@@ -66,9 +69,18 @@ fn process_auction_link(
         }
         LotAuctionKind::Joined | LotAuctionKind::Splitted => {
             let lot_links = parse_lot_auction_page_links(&asset_page)?;
-            for (i, lot_link) in lot_links.iter().enumerate() {
+            for lot_link in lot_links.iter() {
                 let lot_page = url_fetcher.get_url(lot_link)?;
-                let mut asset = Asset::new(&auction.id, &parse_lot_auction_page(&lot_page, i + 1)?);
+
+                let lot_id_begin =
+                    lot_link.find(AUCTION_LOT_NUMBER_STR).unwrap() + AUCTION_LOT_NUMBER_STR.len();
+                let lot_id_end = lot_link[lot_id_begin..].find('&').unwrap() + lot_id_begin;
+                let lot_id = &lot_link[lot_id_begin..lot_id_end];
+
+                let mut asset = Asset::new(
+                    &auction.id,
+                    &parse_lot_auction_page(&lot_page, lot_id.parse::<usize>().unwrap())?,
+                );
                 update_asset_coordinates(&mut asset, &geosolver);
                 assets.push(asset);
             }
