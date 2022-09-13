@@ -226,10 +226,7 @@ async fn process_auction_link(
 
                 let asset = Asset::new(
                     &auction.id,
-                    &shylock_parser::parser::parse_lot_auction_page(
-                        &lot_page,
-                        lot_id.parse::<usize>().unwrap(),
-                    )?,
+                    &shylock_parser::parser::parse_lot_auction_page(&lot_page, lot_id)?,
                 );
                 assets.push(asset);
             }

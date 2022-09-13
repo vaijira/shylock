@@ -77,10 +77,8 @@ fn process_auction_link(
                 let lot_id_end = lot_link[lot_id_begin..].find('&').unwrap() + lot_id_begin;
                 let lot_id = &lot_link[lot_id_begin..lot_id_end];
 
-                let mut asset = Asset::new(
-                    &auction.id,
-                    &parse_lot_auction_page(&lot_page, lot_id.parse::<usize>().unwrap())?,
-                );
+                let mut asset =
+                    Asset::new(&auction.id, &parse_lot_auction_page(&lot_page, lot_id)?);
                 update_asset_coordinates(&mut asset, &geosolver);
                 assets.push(asset);
             }
