@@ -15,6 +15,9 @@
 #[macro_use]
 extern crate lazy_static;
 
+/// Module for accessing the auction local database.
+pub mod db;
+
 mod geosolver;
 /// Module communicating through http to BOE website
 pub mod http;
