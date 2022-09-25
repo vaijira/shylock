@@ -1,8 +1,11 @@
-use shylock_data::{Asset, Auction, Management, Other, Property, Vehicle};
+use shylock_data::{Asset, Auction, AuctionState, Management, Other, Property, Vehicle};
 use sqlx::{
-    sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions, SqliteSynchronous},
-    Pool, Sqlite,
+    sqlite::{
+        SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions, SqliteRow, SqliteSynchronous,
+    },
+    Pool, Row, Sqlite,
 };
+use std::fmt::Write;
 use std::{str::FromStr, time::Duration};
 
 /// Default path for db file.
@@ -206,5 +209,45 @@ impl DbClient {
             Ok(None) | Err(sqlx::Error::RowNotFound) => Ok(false),
             Err(err) => Err(Box::new(err)),
         }
+    }
+
+    /// Returns all auctions with a determine `state`.
+    pub async fn get_auctions_id_with_states(
+        &self,
+        states: &[AuctionState],
+    ) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+        let mut select_query = "SELECT id FROM auctions WHERE ".to_owned();
+
+        for (i, state) in states.iter().enumerate() {
+            if i > 0 {
+                write!(select_query, "or auction_state = '{}' ", state)?;
+            } else {
+                write!(select_query, "auction_state = '{}' ", state)?;
+            }
+        }
+
+        Ok(sqlx::query(&select_query)
+            .map(|row: SqliteRow| row.get(0))
+            .fetch_all(&self.pool)
+            .await?)
+    }
+
+    /// Update `auction_id` auction with the new `state`.
+    pub async fn update_auction_state(
+        &self,
+        auction_id: &str,
+        state: AuctionState,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        sqlx::query(
+            r#"UPDATE auctions
+        SET auction_state = ?
+        WHERE id = ?"#,
+        )
+        .bind(state)
+        .bind(auction_id)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
     }
 }

@@ -26,6 +26,9 @@ pub mod parser;
 /// Module to browse BOE website.
 pub mod scraper;
 
+/// Module with auxiliary functions.
+pub mod util;
+
 pub use self::scraper::scrape;
 pub use chrono::NaiveDate;
 pub use geo_types::Point;

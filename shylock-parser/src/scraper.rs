@@ -1,4 +1,5 @@
 use crate::http::{BlockingUrlFetcher, HttpClient, MAIN_ONGOING_AUCTIONS_BOE_URL};
+use crate::util::extract_auction_lot_number_from_link;
 use crate::{geosolver::GeoSolver, parser::*, AuctionMap};
 use geo_types::Point;
 use shylock_data::types::{Asset, Auction, LotAuctionKind, Management};
@@ -6,9 +7,6 @@ use shylock_data::AuctionState;
 use std::collections::HashMap;
 
 const DEFAULT_COUNTRY: &str = "Spain";
-
-/// Constant for parsing lot number @TODO make pub(crate) in future
-pub const AUCTION_LOT_NUMBER_STR: &str = "idLote=";
 
 fn get_auctions_links(
     url_fetcher: &dyn HttpClient,
@@ -72,10 +70,7 @@ fn process_auction_link(
             for lot_link in lot_links.iter() {
                 let lot_page = url_fetcher.get_url(lot_link)?;
 
-                let lot_id_begin =
-                    lot_link.find(AUCTION_LOT_NUMBER_STR).unwrap() + AUCTION_LOT_NUMBER_STR.len();
-                let lot_id_end = lot_link[lot_id_begin..].find('&').unwrap() + lot_id_begin;
-                let lot_id = &lot_link[lot_id_begin..lot_id_end];
+                let lot_id = extract_auction_lot_number_from_link(lot_link)?;
 
                 let mut asset =
                     Asset::new(&auction.id, &parse_lot_auction_page(&lot_page, lot_id)?);

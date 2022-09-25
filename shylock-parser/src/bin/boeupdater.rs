@@ -5,11 +5,9 @@ use shylock_data::types::{Asset, Auction, LotAuctionKind, Management};
 use shylock_parser::{
     db::{DbClient, DEFAULT_DB_PATH},
     http::{UrlFetcher, MAIN_ALL_AUCTIONS_BOE_URL},
-    scraper::AUCTION_LOT_NUMBER_STR,
+    util::{extract_auction_id_from_link, extract_auction_lot_number_from_link},
     AuctionState,
 };
-
-const AUCTION_ID_LINK_STR: &str = "?idSub=";
 
 async fn process_auction_link(
     url_fetcher: &UrlFetcher,
@@ -48,10 +46,7 @@ async fn process_auction_link(
             for lot_link in lot_links.iter() {
                 let lot_page = url_fetcher.get_url(lot_link).await?;
 
-                let lot_id_begin =
-                    lot_link.find(AUCTION_LOT_NUMBER_STR).unwrap() + AUCTION_LOT_NUMBER_STR.len();
-                let lot_id_end = lot_link[lot_id_begin..].find('&').unwrap() + lot_id_begin;
-                let lot_id = &lot_link[lot_id_begin..lot_id_end];
+                let lot_id = extract_auction_lot_number_from_link(lot_link)?;
 
                 let asset = Asset::new(
                     &auction.id,
@@ -81,10 +76,7 @@ async fn page_scraper(
     let number_auctions = auction_links.len();
 
     for auction_link in auction_links {
-        let id_begin =
-            auction_link.0.find(AUCTION_ID_LINK_STR).unwrap() + AUCTION_ID_LINK_STR.len();
-        let id_end = auction_link.0[id_begin..].find('&').unwrap() + id_begin;
-        let auction_id = &auction_link.0[id_begin..id_end];
+        let auction_id = extract_auction_id_from_link(&auction_link.0)?;
 
         if let Ok(true) = db_client.auction_exists(auction_id).await {
             log::info!("Auction ->{}<- previously processed", auction_id);
@@ -122,7 +114,7 @@ async fn page_scraper(
     Ok((auction_ok, auction_err, auction_already_process))
 }
 
-async fn scrape(db_client: &DbClient) -> Result<(), Box<dyn std::error::Error>> {
+async fn init_scrape(db_client: &DbClient) -> Result<(), Box<dyn std::error::Error>> {
     let http_client = &UrlFetcher::new();
     let main_page = http_client.get_url(&MAIN_ALL_AUCTIONS_BOE_URL).await?;
     let mut pages_url = shylock_parser::parser::parse_extra_pages(&main_page);
@@ -151,6 +143,69 @@ async fn scrape(db_client: &DbClient) -> Result<(), Box<dyn std::error::Error>> 
     Ok(())
 }
 
+async fn auction_state_page_scraper(
+    http_client: &UrlFetcher,
+    db_client: &DbClient,
+    auction_ids: &[String],
+    result_page_url: &str,
+) -> Result<u32, Box<dyn std::error::Error>> {
+    let mut auction_ok: u32 = 0;
+
+    log::info!("page url to process: {}", result_page_url);
+    let result_page = http_client.get_url(result_page_url).await?;
+    let auction_links = shylock_parser::parser::parse_result_page(&result_page);
+
+    for auction_link in auction_links {
+        let auction_id = extract_auction_id_from_link(&auction_link.0)?;
+
+        if auction_ids.iter().any(|s| s == auction_id) {
+            db_client
+                .update_auction_state(auction_id, auction_link.1)
+                .await?;
+            log::info!("Updated state of auction ->{}<-", auction_id);
+            auction_ok += 1;
+        }
+    }
+
+    Ok(auction_ok)
+}
+
+async fn update_scrape(db_client: &DbClient) -> Result<(), Box<dyn std::error::Error>> {
+    let auction_states = &[
+        AuctionState::Ongoing,
+        AuctionState::ToBeOpened,
+        AuctionState::Suspended,
+    ];
+    let http_client = &UrlFetcher::new();
+    let auction_ids = &db_client
+        .get_auctions_id_with_states(auction_states)
+        .await?;
+
+    log::info!(
+        "Total BOE ongoing auctions to check for current state: {}",
+        auction_ids.len()
+    );
+    let main_page = http_client.get_url(&MAIN_ALL_AUCTIONS_BOE_URL).await?;
+    let mut pages_url = shylock_parser::parser::parse_extra_pages(&main_page);
+
+    pages_url.insert(0, MAIN_ALL_AUCTIONS_BOE_URL.to_string());
+    log::info!("Total BOE pages to process: {}", pages_url.len());
+
+    let stream = stream::iter(pages_url.iter().enumerate());
+
+    stream
+        .for_each_concurrent(6, |page| async move {
+            if let Ok(ok) =
+                auction_state_page_scraper(http_client, db_client, auction_ids, page.1).await
+            {
+                log::info!("Update auctions: {} for page {}.", ok, page.0,);
+            }
+        })
+        .await;
+
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::from_env(Env::default().default_filter_or("info")).init();
@@ -158,6 +213,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .version("0.1")
         .author("Jorge Perez Burgos <vaijira@gmail.com>")
         .about("Update db with latest auctions BOE information.")
+        .arg(
+            arg!(<MODE>)
+                .help(
+                    r#"init: initialize database loading all auctions and assets.
+update: update ongoing auctions status.
+"#,
+                )
+                .value_parser(["init", "update"]),
+        )
         .arg(
             arg!(-d --db_path <DB_PATH> "Sets the database path, default: ./db/shylock.db")
                 .required(false),
@@ -170,7 +234,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     db_client.migrate().await?;
 
-    let _ = scrape(&db_client).await;
+    match matches
+        .get_one::<String>("MODE")
+        .expect("'MODE' is required and parsing will fail if its missing")
+        .as_str()
+    {
+        "init" => {
+            log::info!("Initialization mode going to all auctions.");
+            let _ = init_scrape(&db_client).await;
+        }
+        "update" => {
+            log::info!("Updating status of ongoing auctions.");
+            let _ = update_scrape(&db_client).await;
+        }
+        _ => unreachable!(),
+    }
 
     Ok(())
 }

@@ -7,6 +7,7 @@ use geo_types::Point;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fmt::Display;
 use std::str::FromStr;
 
 pub(crate) const DEFAULT_DECIMALS: u32 = 2;
@@ -256,6 +257,19 @@ pub enum AuctionState {
     Suspended,
     /// Unknown state for auction
     Unknown,
+}
+
+impl Display for AuctionState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match *self {
+            Self::Cancelled => write!(f, "Canceled"),
+            Self::Finished => write!(f, "Finished"),
+            Self::ToBeOpened => write!(f, "ToBeOpened"),
+            Self::Ongoing => write!(f, "Ongoing"),
+            Self::Suspended => write!(f, "Suspended"),
+            Self::Unknown => write!(f, "Unknown"),
+        }
+    }
 }
 
 impl FromStr for AuctionState {
