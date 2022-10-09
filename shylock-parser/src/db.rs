@@ -1,4 +1,8 @@
-use shylock_data::{Asset, Auction, AuctionState, Management, Other, Property, Vehicle};
+use geo_types::Point;
+use rust_decimal::Decimal;
+use shylock_data::{
+    Asset, Auction, AuctionState, BidInfo, Management, Other, Property, Vehicle, DEFAULT_DECIMALS,
+};
 use sqlx::{
     sqlite::{
         SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions, SqliteRow, SqliteSynchronous,
@@ -7,6 +11,8 @@ use sqlx::{
 };
 use std::fmt::Write;
 use std::{str::FromStr, time::Duration};
+
+use crate::util::normalize;
 
 /// Default path for db file.
 pub const DEFAULT_DB_PATH: &str = "./db/shylock.db";
@@ -212,7 +218,7 @@ impl DbClient {
     }
 
     /// Returns all auctions with a determine `state`.
-    pub async fn get_auctions_id_with_states(
+    pub async fn get_auction_ids_with_states(
         &self,
         states: &[AuctionState],
     ) -> Result<Vec<String>, Box<dyn std::error::Error>> {
@@ -249,5 +255,235 @@ impl DbClient {
         .await?;
 
         Ok(())
+    }
+
+    /// Update `property` coordinates in db.
+    pub async fn update_asset_coordinate(
+        &self,
+        property: &Property,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let point = property.coordinates.unwrap().x_y();
+        sqlx::query(
+            r#"UPDATE properties
+            SET coordinates = ?
+            WHERE auction_id = ? and
+            catastro_reference = ?"#,
+        )
+        .bind(&format!("{} {}", point.0, point.1))
+        .bind(&property.auction_id)
+        .bind(&property.catastro_reference)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    /// Get management by `id`.
+    pub async fn get_management_by_id(
+        &self,
+        id: &str,
+    ) -> Result<Management, Box<dyn std::error::Error>> {
+        match sqlx::query(r#"SELECT * FROM managements WHERE code = ?"#)
+            .bind(&id)
+            .map(|row: SqliteRow| Management {
+                code: row.get("code"),
+                description: row.get("description"),
+                address: row.get("address"),
+                telephone: row.get("telephone"),
+                fax: row.get("fax"),
+                email: row.get("email"),
+            })
+            .fetch_one(&self.pool)
+            .await
+        {
+            Ok(management) => Ok(management),
+            Err(err) => Err(Box::new(err)),
+        }
+    }
+
+    /// Returns all auctions with determine `states`.
+    pub async fn get_auctions_with_states(
+        &self,
+        states: &[AuctionState],
+    ) -> Result<Vec<Auction>, Box<dyn std::error::Error>> {
+        let mut select_query =
+            "SELECT a.*, m.* FROM auctions a JOIN managements m ON a.management = m.code WHERE "
+                .to_owned();
+
+        for (i, state) in states.iter().enumerate() {
+            if i > 0 {
+                write!(select_query, "or a.auction_state = '{}' ", state)?;
+            } else {
+                write!(select_query, "a.auction_state = '{}' ", state)?;
+            }
+        }
+
+        Ok(sqlx::query(&select_query)
+            .map(|row: SqliteRow| {
+                let claim_quantity: i64 = row.get_unchecked("claim_quantity");
+                let bidinfo: String = row.get("bidinfo");
+                let management = Management {
+                    code: row.get("code"),
+                    description: row.get("description"),
+                    address: row.get("address"),
+                    telephone: row.get("telephone"),
+                    fax: row.get("fax"),
+                    email: row.get("email"),
+                };
+
+                Auction {
+                    id: row.get("id"),
+                    auction_state: row.get("auction_state"),
+                    kind: row.get("kind"),
+                    claim_quantity: Decimal::new(claim_quantity, DEFAULT_DECIMALS),
+                    lots: row.get("lots"),
+                    lot_kind: row.get("lot_kind"),
+                    management,
+                    bidinfo: BidInfo::from_str(&bidinfo).unwrap(),
+                    start_date: row.get("start_date"),
+                    end_date: row.get("end_date"),
+                    notice: row.get("notice"),
+                }
+            })
+            .fetch_all(&self.pool)
+            .await?)
+    }
+
+    /// Returns all properties with determine auction `states`.
+    pub async fn get_properties_with_auction_states(
+        &self,
+        states: &[AuctionState],
+    ) -> Result<Vec<Property>, Box<dyn std::error::Error>> {
+        let mut select_query =
+            "SELECT p.* FROM properties p JOIN auctions a ON p.auction_id = a.id WHERE ".to_owned();
+
+        for (i, state) in states.iter().enumerate() {
+            if i > 0 {
+                write!(select_query, "or a.auction_state = '{}' ", state)?;
+            } else {
+                write!(select_query, "a.auction_state = '{}' ", state)?;
+            }
+        }
+
+        Ok(sqlx::query(&select_query)
+            .map(|row: SqliteRow| {
+                let charges: i64 = row.get_unchecked("charges");
+                let bidinfo: String = row.get("bidinfo");
+                let points_str: Option<String> = row.get("coordinates");
+                let coordinates = if let Some(points) = points_str {
+                    let points = points.split(' ').collect::<Vec<&str>>();
+                    Some(Point::new(
+                        points[0].parse::<f64>().unwrap(),
+                        points[1].parse::<f64>().unwrap(),
+                    ))
+                } else {
+                    None
+                };
+
+                Property {
+                    address: row.get("address"),
+                    auction_id: row.get("auction_id"),
+                    bidinfo: match BidInfo::from_str(&bidinfo) {
+                        Ok(v) => Some(v),
+                        _ => None,
+                    },
+                    catastro_reference: row.get("catastro_reference"),
+                    category: row.get("category"),
+                    charges: Decimal::new(charges, DEFAULT_DECIMALS),
+                    city: normalize(row.get("city")),
+                    coordinates,
+                    description: row.get("description"),
+                    owner_status: row.get("owner_status"),
+                    postal_code: row.get("postal_code"),
+                    primary_residence: row.get("primary_residence"),
+                    province: row.get("province"),
+                    register_inscription: row.get("register_inscription"),
+                    visitable: row.get("visitable"),
+                }
+            })
+            .fetch_all(&self.pool)
+            .await?)
+    }
+
+    /// Returns all vehicles with determine auction `states`.
+    pub async fn get_vehicles_with_auction_states(
+        &self,
+        states: &[AuctionState],
+    ) -> Result<Vec<Vehicle>, Box<dyn std::error::Error>> {
+        let mut select_query =
+            "SELECT v.* FROM vehicles v JOIN auctions a ON v.auction_id = a.id WHERE ".to_owned();
+
+        for (i, state) in states.iter().enumerate() {
+            if i > 0 {
+                write!(select_query, "or a.auction_state = '{}' ", state)?;
+            } else {
+                write!(select_query, "a.auction_state = '{}' ", state)?;
+            }
+        }
+
+        Ok(sqlx::query(&select_query)
+            .map(|row: SqliteRow| {
+                let charges: i64 = row.get_unchecked("charges");
+                let bidinfo: String = row.get("bidinfo");
+
+                Vehicle {
+                    auction_id: row.get("auction_id"),
+                    bidinfo: match BidInfo::from_str(&bidinfo) {
+                        Ok(v) => Some(v),
+                        _ => None,
+                    },
+                    brand: row.get("brand"),
+                    category: row.get("category"),
+                    charges: Decimal::new(charges, DEFAULT_DECIMALS),
+                    description: row.get("description"),
+                    frame_number: row.get("frame_number"),
+                    licensed_date: row.get("licensed_date"),
+                    license_plate: row.get("license_plate"),
+                    localization: row.get("localization"),
+                    model: row.get("model"),
+                    visitable: row.get("visitable"),
+                }
+            })
+            .fetch_all(&self.pool)
+            .await?)
+    }
+
+    /// Returns all other asstes with determine auction `states`.
+    pub async fn get_other_assets_with_auction_states(
+        &self,
+        states: &[AuctionState],
+    ) -> Result<Vec<Other>, Box<dyn std::error::Error>> {
+        let mut select_query =
+            "SELECT o.* FROM others o JOIN auctions a ON o.auction_id = a.id WHERE ".to_owned();
+
+        for (i, state) in states.iter().enumerate() {
+            if i > 0 {
+                write!(select_query, "or a.auction_state = '{}' ", state)?;
+            } else {
+                write!(select_query, "a.auction_state = '{}' ", state)?;
+            }
+        }
+
+        Ok(sqlx::query(&select_query)
+            .map(|row: SqliteRow| {
+                let charges: i64 = row.get_unchecked("charges");
+                let bidinfo: String = row.get("bidinfo");
+
+                Other {
+                    additional_information: row.get("additional_information"),
+                    auction_id: row.get("auction_id"),
+                    bidinfo: match BidInfo::from_str(&bidinfo) {
+                        Ok(v) => Some(v),
+                        _ => None,
+                    },
+                    category: row.get("category"),
+                    charges: Decimal::new(charges, DEFAULT_DECIMALS),
+                    description: row.get("description"),
+                    judicial_title: row.get("judicial_title"),
+                    visitable: row.get("visitable"),
+                }
+            })
+            .fetch_all(&self.pool)
+            .await?)
     }
 }

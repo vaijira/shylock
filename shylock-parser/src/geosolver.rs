@@ -3,23 +3,26 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use std::{borrow::Cow, thread, time};
 
-use crate::http::{BlockingUrlFetcher, HttpClient};
+use crate::http::UrlFetcher;
 
 const NOMINATIN_OSM_URL: &str = "https://nominatim.openstreetmap.org/search.php";
 
-pub(crate) struct GeoSolver {
-    client: BlockingUrlFetcher,
+/// Provides client for geosolving addresses.
+#[derive(Debug)]
+pub struct GeoSolver {
+    client: UrlFetcher,
 }
 
 impl GeoSolver {
-    pub(crate) fn new() -> Self {
+    /// Creates geosolver client.
+    pub fn new() -> Self {
         GeoSolver {
-            client: BlockingUrlFetcher::new(),
+            client: UrlFetcher::new(),
         }
     }
 
-    fn get_url(&self, target: &str) -> Result<String, Box<dyn std::error::Error>> {
-        let body = self.client.get_url(target)?;
+    async fn get_url(&self, target: &str) -> Result<String, Box<dyn std::error::Error>> {
+        let body = self.client.get_url(target).await?;
 
         Ok(body)
     }
@@ -32,13 +35,13 @@ impl GeoSolver {
         REMOVE_SPACES.replace_all(address, " ")
     }
 
-    fn try_url(&self, url: &str) -> Result<Option<Point<f64>>, Box<dyn std::error::Error>> {
+    async fn try_url(&self, url: &str) -> Result<Option<Point<f64>>, Box<dyn std::error::Error>> {
         // Openstreet map is a free service sleep 1 second to not abuse.
         let one_second = time::Duration::from_secs(1);
         thread::sleep(one_second);
 
         log::debug!("nominatin url: {}", url);
-        let body = self.get_url(url)?;
+        let body = self.get_url(url).await?;
         let json: serde_json::Value = serde_json::from_str(&body)?;
 
         log::debug!("json: {}", json);
@@ -60,7 +63,9 @@ impl GeoSolver {
         Ok(Some(Point::new(x, y)))
     }
 
-    pub(crate) fn resolve(
+    /// Return a latitude and longitude point if it resolves successfully
+    /// an `address`, `city`, `province`, `country`, `postal_code` information.
+    pub async fn resolve(
         &self,
         address: &str,
         city: &str,
@@ -74,18 +79,25 @@ impl GeoSolver {
             NOMINATIN_OSM_URL, self.clean_address(address), city, province, country, postal_code
         );
 
-        let mut result = self.try_url(&url).unwrap_or(None);
+        let mut result = self.try_url(&url).await.unwrap_or(None);
         if result.is_none() {
             let url = format!(
                 "{}?city={}&state={}&country={}&postalcode={}&countrycodes=es&format=jsonv2",
                 NOMINATIN_OSM_URL, city, province, country, postal_code
             );
-            result = self.try_url(&url)?;
+            result = self.try_url(&url).await?;
         }
 
         Ok(result)
     }
 }
+
+impl Default for GeoSolver {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
 

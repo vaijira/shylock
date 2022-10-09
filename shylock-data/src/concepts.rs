@@ -31,7 +31,8 @@ macro_rules! boe_auction_concepts {
         )+
     ) => {
         /// Type of BOE concepts
-        #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, sqlx::Type)]
+        #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
+        #[cfg_attr(feature = "sqlx", derive(sqlx::Type))]
         pub enum BoeConcept {
             $(
                 $(#[$docs])*

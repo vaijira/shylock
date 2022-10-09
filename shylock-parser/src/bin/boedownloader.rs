@@ -1,29 +1,9 @@
 use clap::{arg, Command};
 use env_logger::Env;
-use serde::Serialize;
-use std::fs::File;
-use std::io;
-use std::str;
+use shylock_parser::util::dump_to_json_file;
 
 const AUCTION_DATA_JSON_FILE_NAME: &str = "auctions.json";
 const ASSETS_DATA_JSON_FILE_NAME: &str = "assets.json";
-
-fn dump_to_json_file<T>(dst_path: &str, data: &T) -> Result<(), Box<dyn std::error::Error>>
-where
-    T: Serialize,
-{
-    let json = serde_json::to_string_pretty(&data).unwrap();
-
-    let mut dest = {
-        log::info!("data json file will be located under: '{:?}'", dst_path);
-        File::create(dst_path)?
-    };
-
-    io::copy(&mut json.as_bytes(), &mut dest)?;
-    log::info!("data json file created");
-
-    Ok(())
-}
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::from_env(Env::default().default_filter_or("info")).init();

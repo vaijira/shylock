@@ -22,6 +22,7 @@ pub trait HttpClient {
     fn get_url(&self, target: &str) -> Result<String, Box<dyn std::error::Error>>;
 }
 
+#[derive(Debug)]
 pub(crate) struct BlockingUrlFetcher {
     client: reqwest::blocking::Client,
 }

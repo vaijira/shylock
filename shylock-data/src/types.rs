@@ -10,7 +10,8 @@ use std::collections::HashMap;
 use std::fmt::Display;
 use std::str::FromStr;
 
-pub(crate) const DEFAULT_DECIMALS: u32 = 2;
+/// Default number of decimals.
+pub const DEFAULT_DECIMALS: u32 = 2;
 const NOT_APPLICABLE: &str = "NA";
 
 fn get_clean_text(data: &HashMap<BoeConcept, String>, field: &BoeConcept) -> String {
@@ -69,7 +70,7 @@ fn get_decimal(data: &HashMap<BoeConcept, String>, field: &BoeConcept) -> Decima
 }
 
 fn get_auction_kind(data: &HashMap<BoeConcept, String>) -> AuctionKind {
-    let mut result: AuctionKind = AuctionKind::Unkown;
+    let mut result: AuctionKind = AuctionKind::Unknown;
     if let Some(auction_kind) = data.get(&BoeConcept::AuctionKind) {
         result = match &auction_kind[..] {
             "AGENCIA TRIBUTARIA" => AuctionKind::TaxAgency,
@@ -79,7 +80,7 @@ fn get_auction_kind(data: &HashMap<BoeConcept, String>) -> AuctionKind {
             "JUDICIAL EN VIA DE APREMIO" => AuctionKind::JudicialUnderPressure,
             "JUDICIAL CONCURSAL" => AuctionKind::Bankruptcy,
             "NOTARIAL EN VENTA EXTRAJUDICIAL" => AuctionKind::NotaryExtraJudicial,
-            _ => AuctionKind::Unkown,
+            _ => AuctionKind::Unknown,
         };
     }
 
@@ -101,7 +102,8 @@ fn get_lot_auction_kind(data: &HashMap<BoeConcept, String>) -> LotAuctionKind {
 }
 
 /// Manager information to contact for information about the auction.
-#[derive(Debug, Eq, PartialEq, Deserialize, Serialize, sqlx::FromRow)]
+#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
+#[cfg_attr(feature = "sqlx", derive(sqlx::FromRow))]
 pub struct Management {
     /// Management code
     pub code: String,
@@ -147,7 +149,8 @@ impl Management {
 }
 
 /// Bid information struct
-#[derive(Debug, Eq, PartialEq, Deserialize, Serialize, sqlx::Type)]
+#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
+#[cfg_attr(feature = "sqlx", derive(sqlx::Type))]
 pub struct BidInfo {
     /// Valuation of the assets.
     pub appraisal: Decimal,
@@ -211,7 +214,8 @@ impl FromStr for BidInfo {
 }
 
 /// All posible kind of auctions.
-#[derive(Debug, Eq, PartialEq, Deserialize, Serialize, sqlx::Type)]
+#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
+#[cfg_attr(feature = "sqlx", derive(sqlx::Type))]
 pub enum AuctionKind {
     /// Tax agency auction
     TaxAgency, // AGENCIA TRIBUTARIA
@@ -227,12 +231,13 @@ pub enum AuctionKind {
     Bankruptcy, // JUDICIAL CONCURSAL
     /// Notary extra judicial sell
     NotaryExtraJudicial, // NOTARIAL EN VENTA EXTRAJUDICIAL
-    /// Unkown
-    Unkown,
+    /// Unknown
+    Unknown,
 }
 
 /// Type of auction kind when it contains lots
-#[derive(Debug, Eq, PartialEq, Deserialize, Serialize, sqlx::Type)]
+#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
+#[cfg_attr(feature = "sqlx", derive(sqlx::Type))]
 pub enum LotAuctionKind {
     /// Auction without lots
     NotApplicable,
@@ -243,7 +248,8 @@ pub enum LotAuctionKind {
 }
 
 /// Auction state
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Deserialize, Serialize, sqlx::Type)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Deserialize, Serialize)]
+#[cfg_attr(feature = "sqlx", derive(sqlx::Type))]
 pub enum AuctionState {
     /// Cancelled auction
     Cancelled,
@@ -306,7 +312,8 @@ impl FromStr for AuctionState {
 }
 
 /// Auction struct
-#[derive(Debug, Eq, PartialEq, Deserialize, Serialize, sqlx::FromRow)]
+#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
+#[cfg_attr(feature = "sqlx", derive(sqlx::FromRow))]
 pub struct Auction {
     /// Auction unique identifier.
     pub id: String,
@@ -368,7 +375,8 @@ impl Auction {
 }
 
 /// Property can be any real state property: apartment, garage lot, industrial ...
-#[derive(Debug, PartialEq, Deserialize, Serialize, sqlx::FromRow)]
+#[derive(Debug, PartialEq, Deserialize, Serialize)]
+#[cfg_attr(feature = "sqlx", derive(sqlx::FromRow))]
 pub struct Property {
     /// Address location.
     pub address: String,
@@ -468,7 +476,8 @@ impl Property {
 }
 
 /// Any kind of vehicle
-#[derive(Debug, Eq, PartialEq, Deserialize, Serialize, sqlx::FromRow)]
+#[derive(Debug, Eq, PartialEq, Deserialize, Serialize)]
+#[cfg_attr(feature = "sqlx", derive(sqlx::FromRow))]
 pub struct Vehicle {
     /// Auction identifier is linked to.
     pub auction_id: String,
@@ -544,7 +553,8 @@ impl Vehicle {
 }
 
 /// Any asset that is not a vehicle or a property.
-#[derive(Debug, Eq, PartialEq, Deserialize, Serialize, sqlx::FromRow)]
+#[derive(Debug, Eq, PartialEq, Deserialize, Serialize)]
+#[cfg_attr(feature = "sqlx", derive(sqlx::FromRow))]
 pub struct Other {
     /// Any asset additional information.
     pub additional_information: String,

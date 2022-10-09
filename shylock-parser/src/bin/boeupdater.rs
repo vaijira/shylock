@@ -1,11 +1,15 @@
+use std::collections::BTreeMap;
+
 use clap::{arg, Command};
 use env_logger::Env;
-use futures::*;
+use futures::{stream, StreamExt};
 use shylock_data::types::{Asset, Auction, LotAuctionKind, Management};
 use shylock_parser::{
     db::{DbClient, DEFAULT_DB_PATH},
+    geosolver::GeoSolver,
     http::{UrlFetcher, MAIN_ALL_AUCTIONS_BOE_URL},
-    util::{extract_auction_id_from_link, extract_auction_lot_number_from_link},
+    scraper::DEFAULT_COUNTRY,
+    util::{dump_to_cbor_file, extract_auction_id_from_link, extract_auction_lot_number_from_link},
     AuctionState,
 };
 
@@ -178,7 +182,7 @@ async fn update_scrape(db_client: &DbClient) -> Result<(), Box<dyn std::error::E
     ];
     let http_client = &UrlFetcher::new();
     let auction_ids = &db_client
-        .get_auctions_id_with_states(auction_states)
+        .get_auction_ids_with_states(auction_states)
         .await?;
 
     log::info!(
@@ -206,6 +210,86 @@ async fn update_scrape(db_client: &DbClient) -> Result<(), Box<dyn std::error::E
     Ok(())
 }
 
+async fn export_ongoing_auctions(db_client: &DbClient) -> Result<(), Box<dyn std::error::Error>> {
+    let mut auctions: BTreeMap<String, Auction> = BTreeMap::new();
+    let mut assets: Vec<Asset> = Vec::new();
+    let geosolver = &GeoSolver::new();
+
+    db_client
+        .get_auctions_with_states(&[AuctionState::Ongoing])
+        .await?
+        .into_iter()
+        .for_each(|x| {
+            auctions.insert(x.id.clone(), x);
+        });
+
+    //let auction_json_file = format!("{}/{}", output_dir, AUCTION_DATA_JSON_FILE_NAME);
+    dump_to_cbor_file("../shylock-dominator/tmp/auctions.cbor", &auctions)?;
+
+    let mut properties = db_client
+        .get_properties_with_auction_states(&[AuctionState::Ongoing])
+        .await?;
+
+    stream::iter(properties.iter_mut())
+        .for_each(|property| async move {
+            if property.coordinates == None {
+                property.coordinates = match geosolver
+                    .resolve(
+                        &property.address,
+                        &property.city,
+                        property.province.name(),
+                        DEFAULT_COUNTRY,
+                        &property.postal_code,
+                    )
+                    .await
+                {
+                    Ok(coordinates) => coordinates,
+                    Err(error) => {
+                        log::warn!("Unable to retrieve coordinates: {}", error);
+                        None
+                    }
+                };
+            }
+        })
+        .await;
+
+    properties
+        .into_iter()
+        .for_each(|property| assets.push(Asset::Property(property)));
+
+    stream::iter(assets.iter())
+        .for_each_concurrent(1, |asset| async move {
+            if let Asset::Property(property) = asset {
+                if property.coordinates.is_some() {
+                    if let Err(err) = db_client.update_asset_coordinate(property).await {
+                        log::warn!("Unable to update coordinates: {}", err);
+                    }
+                }
+            }
+        })
+        .await;
+
+    db_client
+        .get_vehicles_with_auction_states(&[AuctionState::Ongoing])
+        .await?
+        .into_iter()
+        .for_each(|x| {
+            assets.push(Asset::Vehicle(x));
+        });
+
+    db_client
+        .get_other_assets_with_auction_states(&[AuctionState::Ongoing])
+        .await?
+        .into_iter()
+        .for_each(|x| {
+            assets.push(Asset::Other(x));
+        });
+
+    dump_to_cbor_file("../shylock-dominator/tmp/assets.cbor", &assets)?;
+
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::from_env(Env::default().default_filter_or("info")).init();
@@ -218,9 +302,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .help(
                     r#"init: initialize database loading all auctions and assets.
 update: update ongoing auctions status.
+export: export ongoing auctions and assets to json files.
 "#,
                 )
-                .value_parser(["init", "update"]),
+                .value_parser(["init", "update", "export"]),
         )
         .arg(
             arg!(-d --db_path <DB_PATH> "Sets the database path, default: ./db/shylock.db")
@@ -232,7 +317,7 @@ update: update ongoing auctions status.
 
     let db_client = DbClient::new(db_path).await?;
 
-    db_client.migrate().await?;
+    // db_client.migrate().await?;
 
     match matches
         .get_one::<String>("MODE")
@@ -246,6 +331,10 @@ update: update ongoing auctions status.
         "update" => {
             log::info!("Updating status of ongoing auctions.");
             let _ = update_scrape(&db_client).await;
+        }
+        "export" => {
+            log::info!("Exporting ongoing auctions and assets to json files.");
+            let _ = export_ongoing_auctions(&db_client).await;
         }
         _ => unreachable!(),
     }

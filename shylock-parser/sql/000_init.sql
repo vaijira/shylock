@@ -57,6 +57,8 @@ CREATE TABLE IF NOT EXISTS properties (
 
     city TEXT NULL,
 
+    coordinates TEXT NULL,
+
     description TEXT NULL,
 
     owner_status TEXT NULL,
