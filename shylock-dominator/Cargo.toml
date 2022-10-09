@@ -1,0 +1,41 @@
+[package]
+name = "shylock-dominator"
+version = "0.1.0"
+authors = ["Jorge Perez Burgos <vaijira@gmail.com>"]
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+build-time = "0.1"
+ciborium = "0.2"
+console_error_panic_hook = "0.1"
+dominator = "0.5"
+dotenvy_macro = "0.15"
+gloo-timers = { version = "0.2", features = ["futures"] }
+js-sys = "0.3"
+log = "0.4"
+futures = "0.3"
+futures-signals = "0.3"
+num-format = "0.4"
+once_cell = "1.7"
+rust_decimal = "1.7"
+substring = "1.4"
+shylock-data = { path = "../shylock-data" }
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+wasm-logger = "0.2"
+
+[dependencies.web-sys]
+version = "0.3"
+features = [
+    "console",
+    "Headers",
+    "HtmlInputElement",
+    "HtmlSelectElement",
+    "Url",
+    "Response",
+    "RequestInit",
+    "Window",
+]

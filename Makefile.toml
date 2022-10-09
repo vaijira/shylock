@@ -1,0 +1,70 @@
+[tasks.boeupdater-init]
+workspace = false
+condition = { files_not_exist = [
+  "${CARGO_MAKE_WORKING_DIRECTORY}/shylock-dominator/auctions.cbor",
+  "${CARGO_MAKE_WORKING_DIRECTORY}/shylock-dominator/assets.cbor"
+   ] }
+command = "cargo"
+args = [
+  "run",
+  "-p",
+  "shylock-parser",
+  "--release",
+  "--bin",
+  "boeupdater",
+  "--",
+  "-d",
+  "./shylock-parser/db/shylock.db",
+  "init",
+]
+
+[tasks.boeupdater-update]
+workspace = false
+condition = { files_not_exist = [
+  "${CARGO_MAKE_WORKING_DIRECTORY}/shylock-dominator/auctions.cbor",
+  "${CARGO_MAKE_WORKING_DIRECTORY}/shylock-dominator/assets.cbor"
+   ] }
+command = "cargo"
+args = [
+  "run",
+  "-p",
+  "shylock-parser",
+  "--release",
+  "--bin",
+  "boeupdater",
+  "--",
+  "-d",
+  "./shylock-parser/db/shylock.db",
+  "update",
+]
+dependencies = [ "boeupdater-init" ]
+
+[tasks.boeupdater-export]
+workspace = false
+condition = { files_not_exist = [
+  "${CARGO_MAKE_WORKING_DIRECTORY}/shylock-dominator/auctions.cbor",
+  "${CARGO_MAKE_WORKING_DIRECTORY}/shylock-dominator/assets.cbor"
+   ] }
+command = "cargo"
+args = [
+  "run",
+  "-p",
+  "shylock-parser",
+  "--release",
+  "--bin",
+  "boeupdater",
+  "--",
+  "-d",
+  "./shylock-parser/db/shylock.db",
+  "export",
+]
+dependencies = [ "boeupdater-update" ]
+
+[tasks.yarn]
+workspace = false
+command = "yarn"
+args = [
+  "run",
+  "build",
+]
+dependencies = [ "boeupdater-export" ]

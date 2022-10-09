@@ -223,8 +223,8 @@ async fn export_ongoing_auctions(db_client: &DbClient) -> Result<(), Box<dyn std
             auctions.insert(x.id.clone(), x);
         });
 
-    //let auction_json_file = format!("{}/{}", output_dir, AUCTION_DATA_JSON_FILE_NAME);
-    dump_to_cbor_file("../shylock-dominator/tmp/auctions.cbor", &auctions)?;
+    let auction_file = format!("{}/../shylock-dominator/{}", env!("CARGO_MANIFEST_DIR"), "auctions.cbor");
+    dump_to_cbor_file(&auction_file, &auctions)?;
 
     let mut properties = db_client
         .get_properties_with_auction_states(&[AuctionState::Ongoing])
@@ -285,7 +285,8 @@ async fn export_ongoing_auctions(db_client: &DbClient) -> Result<(), Box<dyn std
             assets.push(Asset::Other(x));
         });
 
-    dump_to_cbor_file("../shylock-dominator/tmp/assets.cbor", &assets)?;
+    let assets_file = format!("{}/../shylock-dominator/{}", env!("CARGO_MANIFEST_DIR"), "assets.cbor");
+    dump_to_cbor_file(&assets_file, &assets)?;
 
     Ok(())
 }
@@ -317,7 +318,7 @@ export: export ongoing auctions and assets to json files.
 
     let db_client = DbClient::new(db_path).await?;
 
-    // db_client.migrate().await?;
+    db_client.migrate().await?;
 
     match matches
         .get_one::<String>("MODE")

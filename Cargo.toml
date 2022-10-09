@@ -1,8 +1,20 @@
-[workspace]
+[package]
+name = "shylock"
+version = "0.1.0"
+authors = ["Jorge Perez Burgos <vaijira@gmail.com>"]
+edition = "2021"
 
+[workspace]
 members = [
     "shylock-data",
+    "shylock-dominator",
     "shylock-parser",
-    "shylock-ui",
 ]
 
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = 3  # 3 => fast, s/z => small
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = ["-O4"]  # O4 => fast, Oz/Os => small
