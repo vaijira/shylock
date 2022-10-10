@@ -1,15 +1,19 @@
+use std::cmp::Ordering;
 use std::sync::Arc;
 
 use dominator::{clone, events, html, with_node, Dom};
-use futures_signals::signal::Mutable;
+use futures_signals::signal::{Mutable, SignalExt};
 use futures_signals::signal_vec::{MutableVec, SignalVecExt};
+use rust_decimal::prelude::ToPrimitive;
 use shylock_data::provinces::Province;
-use web_sys::HtmlSelectElement;
+use web_sys::{HtmlInputElement, HtmlSelectElement};
 
-use crate::feather::render_svg_crosshair_icon;
+use crate::feather::{
+    render_svg_arrow_down_icon, render_svg_arrow_up_icon, render_svg_crosshair_icon,
+};
 use crate::global::{
-    CELL_CLASS, DEFAULT_ICON_COLOR, FILTER_FLEX_CONTAINER_CLASS, ROW_CLASS, TABLE_CLASS,
-    TBODY_CLASS, THEAD_CLASS,
+    CELL_CLASS, CELL_CLICKABLE_CLASS, DEFAULT_ICON_COLOR, DEFAULT_ICON_SIZE,
+    FILTER_FLEX_CONTAINER_CLASS, TABLE_CLASS, TBODY_CLASS, THEAD_CLASS,
 };
 use crate::{
     global::{CITIES_PROVINCES, PROVINCES},
@@ -19,11 +23,30 @@ use crate::{MyMap, THUNDERFOREST_API_KEY};
 
 const ALL_CITIES_STR: &str = "Todas las ciudades";
 
+#[derive(Clone, Copy, PartialEq)]
+pub enum SortingOrder {
+    None,
+    Up,
+    Down,
+}
+
+#[derive(Clone, Copy, PartialEq)]
+pub enum PropertySorting {
+    None,
+    ByProvince,
+    ByReverseProvince,
+}
+
+const DEFAULT_OPPORTUNITY_VALUE: f64 = 0.7;
+
 pub struct PropertyPage {
     property_list: MutableVec<Arc<PropertyView>>,
     city_options: MutableVec<&'static str>,
     city_property_filter: Mutable<&'static str>,
-    province_property_filter: Mutable<Province>,
+    opportunity_filter: Mutable<f64>,
+    province_filter: Mutable<Province>,
+    province_sorting: Mutable<SortingOrder>,
+    sorting: Mutable<PropertySorting>,
     pub map: MyMap,
 }
 
@@ -33,7 +56,10 @@ impl PropertyPage {
             property_list,
             city_options: MutableVec::new(),
             city_property_filter: Mutable::new(ALL_CITIES_STR),
-            province_property_filter: Mutable::new(Province::All),
+            opportunity_filter: Mutable::new(DEFAULT_OPPORTUNITY_VALUE),
+            province_filter: Mutable::new(Province::All),
+            province_sorting: Mutable::new(SortingOrder::None),
+            sorting: Mutable::new(PropertySorting::None),
             map: MyMap::new(THUNDERFOREST_API_KEY),
         })
     }
@@ -54,7 +80,7 @@ impl PropertyPage {
     }
 
     fn filter_by_province(&self, property_view: &Arc<PropertyView>) -> bool {
-        let province = *self.province_property_filter.lock_ref();
+        let province = *self.province_filter.lock_ref();
         if province == Province::All {
             true
         } else {
@@ -71,16 +97,26 @@ impl PropertyPage {
         }
     }
 
+    fn filter_by_opportunity(&self, property_view: &Arc<PropertyView>) -> bool {
+        let auction_limit = *self.opportunity_filter.lock_ref();
+        let target_value = property_view.bidinfo.value.to_f64().unwrap_or(0.0) * auction_limit;
+
+        property_view.bidinfo.claim_quantity.to_f64().unwrap_or(0.0) > 1.0
+            && target_value > property_view.bidinfo.claim_quantity.to_f64().unwrap_or(0.0)
+    }
+
     fn filter(&self) {
         for property_view in self.property_list.lock_ref().iter() {
             property_view.filtered_in.set_neq(
-                self.filter_by_province(property_view) && self.filter_by_city(property_view),
+                self.filter_by_province(property_view)
+                    && self.filter_by_city(property_view)
+                    && self.filter_by_opportunity(property_view),
             );
         }
     }
 
     fn update_city_options(&self) {
-        let selected_province = *self.province_property_filter.lock_ref();
+        let selected_province = *self.province_filter.lock_ref();
         self.city_options.lock_mut().clear();
         self.city_options.lock_mut().push_cloned(ALL_CITIES_STR);
         CITIES_PROVINCES
@@ -128,6 +164,23 @@ impl PropertyPage {
             .class(&*FILTER_FLEX_CONTAINER_CLASS)
             .children(&mut [
             html!("label", {
+                .visible(true)
+                .attr("for", "checkbox-opportunities")
+                .text("Oportunidades ")
+                .child(render_svg_crosshair_icon(DEFAULT_ICON_COLOR, DEFAULT_ICON_SIZE))
+            }),
+            html!("input" => HtmlInputElement, {
+                .attr("type", "checkbox")
+                .attr("id", "checkbox-opportunities")
+                .attr("alt", "Filtrado por oportunidades")
+                .with_node!(_input => {
+                    .event(clone!(page => move |_: events::Change| {
+                        *page.opportunity_filter.lock_mut() = DEFAULT_OPPORTUNITY_VALUE;
+                        page.filter();
+                     }))
+                })
+            }),
+            html!("label", {
                 .visible(false)
                 .attr("for", "select-province")
                 .text("Filtrado por provincia:")
@@ -141,7 +194,7 @@ impl PropertyPage {
                 .with_node!(select => {
                     .event(clone!(page => move |_: events::Change| {
                         let index: usize = select.value().parse().unwrap();
-                        *page.province_property_filter.lock_mut() = PropertyPage::get_province(index);
+                        *page.province_filter.lock_mut() = PropertyPage::get_province(index);
                         page.update_city_options();
                         page.filter();
                      }))
@@ -203,20 +256,64 @@ impl PropertyPage {
         })
     }
 
-    fn render_table_header(&self) -> Dom {
+    fn sort_by_province(a: &Arc<PropertyView>, b: &Arc<PropertyView>) -> Ordering {
+        a.property.province.cmp(&b.property.province)
+    }
+
+    fn sort_by_reverse_province(a: &Arc<PropertyView>, b: &Arc<PropertyView>) -> Ordering {
+        b.property.province.cmp(&a.property.province)
+    }
+
+    fn sort_by_none(_: &Arc<PropertyView>, _: &Arc<PropertyView>) -> Ordering {
+        Ordering::Equal
+    }
+
+    fn sorting_by(
+        property_sorting: PropertySorting,
+    ) -> fn(&Arc<PropertyView>, &Arc<PropertyView>) -> Ordering {
+        match property_sorting {
+            PropertySorting::ByReverseProvince => PropertyPage::sort_by_reverse_province,
+            PropertySorting::ByProvince => PropertyPage::sort_by_province,
+            PropertySorting::None => PropertyPage::sort_by_none,
+        }
+    }
+
+    fn render_table_header(page: Arc<Self>) -> Dom {
         html!("thead", {
             .class(&*THEAD_CLASS)
             .children(&mut[
                 html!("tr", {
-                    .class(&*ROW_CLASS)
+                    .style("height", "3em")
                     .children(&mut [
                         html!("th", {
                             .class(&*CELL_CLASS)
-                            .child(render_svg_crosshair_icon(DEFAULT_ICON_COLOR))
+                            .child(render_svg_crosshair_icon(DEFAULT_ICON_COLOR, DEFAULT_ICON_SIZE))
                         }),
                         html!("th", {
-                            .class(&*CELL_CLASS)
+                            .class(&*CELL_CLICKABLE_CLASS)
                             .text("Provincia")
+                            .child_signal(page.province_sorting.signal().map(|sorting| {
+                                match sorting {
+                                    SortingOrder::None => Some(Dom::empty()),
+                                    SortingOrder::Up => Some(render_svg_arrow_up_icon(DEFAULT_ICON_COLOR, DEFAULT_ICON_SIZE)),
+                                    SortingOrder::Down => Some(render_svg_arrow_down_icon(DEFAULT_ICON_COLOR, DEFAULT_ICON_SIZE)),
+                                }
+                            }))
+                            .with_node!(_th => {
+                                .event(clone!(page => move |_: events::Click| {
+                                    let selection = *page.province_sorting.lock_ref();
+                                    match selection {
+                                        SortingOrder::None | SortingOrder::Up => {
+                                            *page.sorting.lock_mut() = PropertySorting::ByProvince;
+                                            *page.province_sorting.lock_mut() = SortingOrder::Down;
+                                        },
+                                        SortingOrder::Down => {
+                                            *page.sorting.lock_mut() = PropertySorting::ByReverseProvince;
+                                            *page.province_sorting.lock_mut() = SortingOrder::Up;
+                                        },
+                                    }
+                                }))
+                            })
                         }),
                         html!("th", {
                             .class(&*CELL_CLASS)
@@ -242,12 +339,17 @@ impl PropertyPage {
             html!("table", {
                 .class(&*TABLE_CLASS)
                 .children(&mut[
-                    page.render_table_header(),
+                    PropertyPage::render_table_header(page.clone()),
                     html!("tbody", {
                         .class(&*TBODY_CLASS)
-                        .children_signal_vec(page.property_list.signal_vec_cloned()
-                            .map(clone!(page => move |view| {
-                                PropertyView::render(page.clone(), view)
+                        .children_signal_vec(
+                            page.sorting.signal_ref(|filter| *filter)
+                            .switch_signal_vec(clone!(page => move |filter| {
+                                page.property_list.signal_vec_cloned()
+                                .sort_by_cloned(PropertyPage::sorting_by(filter))
+                                .map(clone!(page => move |view| {
+                                    PropertyView::render(page.clone(), view)
+                                }))
                             }))
                         )
                     }),

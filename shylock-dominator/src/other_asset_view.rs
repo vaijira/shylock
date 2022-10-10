@@ -8,7 +8,7 @@ use crate::{
     feather::render_svg_external_link_icon,
     global::{
         AUCTIONS, CELL_CLASS, CELL_EXPANDED_CLASS, CELL_FLEX_CONTAINER_CLASS, CELL_FLEX_ITEM_CLASS,
-        DEFAULT_ICON_COLOR, ROW_CLASS,
+        DEFAULT_ICON_COLOR, DEFAULT_ICON_SIZE, ROW_CLASS,
     },
     util::{format_valuation, is_targeted_asset, summarize, DESCRIPTION_TEXT_LIMIT},
 };
@@ -43,7 +43,7 @@ impl OtherAssetView {
                         .attr("href", &format!("https://subastas.boe.es/detalleSubasta.php?idSub={}",&self.other.auction_id))
                         .attr("target", "_blank")
                         .text(&self.other.auction_id)
-                        .child(render_svg_external_link_icon(DEFAULT_ICON_COLOR))
+                        .child(render_svg_external_link_icon(DEFAULT_ICON_COLOR, DEFAULT_ICON_SIZE))
                     }))
                 }))
                 .child(html!("span", {
@@ -58,6 +58,15 @@ impl OtherAssetView {
                     .text(&self.other.description)
                     .text(
                         if self.other.description.ends_with('.') { "" }
+                        else {"."}
+                    )
+                }))
+                .child(html!("span", {
+                    .class(&*CELL_FLEX_ITEM_CLASS)
+                    .text("Información adicional: ")
+                    .text(&self.other.additional_information)
+                    .text(
+                        if self.other.additional_information.ends_with('.') { "" }
                         else {"."}
                     )
                 }))

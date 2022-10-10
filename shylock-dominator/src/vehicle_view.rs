@@ -8,7 +8,7 @@ use crate::{
     feather::render_svg_external_link_icon,
     global::{
         AUCTIONS, CELL_CLASS, CELL_EXPANDED_CLASS, CELL_FLEX_CONTAINER_CLASS, CELL_FLEX_ITEM_CLASS,
-        DEFAULT_ICON_COLOR, ROW_CLASS,
+        DEFAULT_ICON_COLOR, DEFAULT_ICON_SIZE, ROW_CLASS,
     },
     util::{format_valuation, is_targeted_asset, summarize, DESCRIPTION_TEXT_LIMIT},
 };
@@ -43,7 +43,7 @@ impl VehicleView {
                         .attr("href", &format!("https://subastas.boe.es/detalleSubasta.php?idSub={}",&self.vehicle.auction_id))
                         .attr("target", "_blank")
                         .text(&self.vehicle.auction_id)
-                        .child(render_svg_external_link_icon(DEFAULT_ICON_COLOR))
+                        .child(render_svg_external_link_icon(DEFAULT_ICON_COLOR, DEFAULT_ICON_SIZE))
                     }))
                 }))
                 .child(html!("span", {
@@ -106,6 +106,10 @@ impl VehicleView {
             html!("td", {
                 .class(&*CELL_CLASS)
                 .text(&self.vehicle.model)
+            }),
+            html!("td", {
+                .class(&*CELL_CLASS)
+                .text(&self.vehicle.license_plate)
             }),
             html!("td", {
                 .class(&*CELL_CLASS)

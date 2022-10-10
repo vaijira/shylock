@@ -14,7 +14,7 @@ members = [
 [profile.release]
 lto = true
 codegen-units = 1
-opt-level = 3  # 3 => fast, s/z => small
+opt-level = "z"  # 3 => fast, s/z => small
 
 [package.metadata.wasm-pack.profile.release]
-wasm-opt = ["-O4"]  # O4 => fast, Oz/Os => small
+wasm-opt = ["-Oz"]  # O4 => fast, Oz/Os => small

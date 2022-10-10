@@ -22,7 +22,7 @@ pub fn is_targeted_asset(bidinfo: &BidInfo) -> Vec<Dom> {
     if bidinfo.claim_quantity.to_f64().unwrap_or(0.0) > 1.0
         && target_value > bidinfo.claim_quantity.to_f64().unwrap_or(0.0)
     {
-        vec![render_svg_crosshair_icon(DEFAULT_ICON_COLOR)]
+        vec![render_svg_crosshair_icon(DEFAULT_ICON_COLOR, "12")]
     } else {
         vec![]
     }

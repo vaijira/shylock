@@ -1,7 +1,7 @@
 use crate::feather::render_svg_crosshair_icon;
 use crate::global::{
-    DEFAULT_ICON_COLOR, NAVBAR_CLASS, NAVITEM_CLASS, NAV_LINK_CLASS, NAV_SELECTED_CLASS,
-    NAV_UL_CLASS, ROOT_CLASS, SECTION_CLASS,
+    DEFAULT_ICON_COLOR, DEFAULT_ICON_SIZE, NAVBAR_CLASS, NAVITEM_CLASS, NAV_LINK_CLASS,
+    NAV_SELECTED_CLASS, NAV_UL_CLASS, ROOT_CLASS, SECTION_CLASS,
 };
 use crate::other_asset_page::OtherAssetPage;
 use crate::other_asset_view::OtherAssetView;
@@ -83,7 +83,7 @@ impl App {
                     .text("Coditia te ayuda a buscar las mejores subastas. ")
                     .text("Busca ")
                     .children(&mut[
-                        render_svg_crosshair_icon(DEFAULT_ICON_COLOR),
+                        render_svg_crosshair_icon(DEFAULT_ICON_COLOR, DEFAULT_ICON_SIZE),
                     ])
                     .text(" para bienes que merezcan la pena. ")
                 }),

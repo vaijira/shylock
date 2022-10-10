@@ -223,7 +223,11 @@ async fn export_ongoing_auctions(db_client: &DbClient) -> Result<(), Box<dyn std
             auctions.insert(x.id.clone(), x);
         });
 
-    let auction_file = format!("{}/../shylock-dominator/{}", env!("CARGO_MANIFEST_DIR"), "auctions.cbor");
+    let auction_file = format!(
+        "{}/../shylock-dominator/{}",
+        env!("CARGO_MANIFEST_DIR"),
+        "auctions.cbor"
+    );
     dump_to_cbor_file(&auction_file, &auctions)?;
 
     let mut properties = db_client
@@ -285,7 +289,11 @@ async fn export_ongoing_auctions(db_client: &DbClient) -> Result<(), Box<dyn std
             assets.push(Asset::Other(x));
         });
 
-    let assets_file = format!("{}/../shylock-dominator/{}", env!("CARGO_MANIFEST_DIR"), "assets.cbor");
+    let assets_file = format!(
+        "{}/../shylock-dominator/{}",
+        env!("CARGO_MANIFEST_DIR"),
+        "assets.cbor"
+    );
     dump_to_cbor_file(&assets_file, &assets)?;
 
     Ok(())

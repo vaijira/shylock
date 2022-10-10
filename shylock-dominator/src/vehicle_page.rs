@@ -5,7 +5,8 @@ use futures_signals::signal_vec::{MutableVec, SignalVecExt};
 
 use crate::feather::render_svg_crosshair_icon;
 use crate::global::{
-    CELL_CLASS, DEFAULT_ICON_COLOR, ROW_CLASS, TABLE_CLASS, TBODY_CLASS, THEAD_CLASS,
+    CELL_CLASS, DEFAULT_ICON_COLOR, DEFAULT_ICON_SIZE, ROW_CLASS, TABLE_CLASS, TBODY_CLASS,
+    THEAD_CLASS,
 };
 use crate::vehicle_view::VehicleView;
 
@@ -28,7 +29,7 @@ impl VehiclePage {
                     .children(&mut [
                         html!("th", {
                             .class(&*CELL_CLASS)
-                            .child(render_svg_crosshair_icon(DEFAULT_ICON_COLOR))
+                            .child(render_svg_crosshair_icon(DEFAULT_ICON_COLOR, DEFAULT_ICON_SIZE))
                         }),
                         html!("th", {
                             .class(&*CELL_CLASS)
@@ -37,6 +38,10 @@ impl VehiclePage {
                         html!("th", {
                             .class(&*CELL_CLASS)
                             .text("Modelo")
+                        }),
+                        html!("th", {
+                            .class(&*CELL_CLASS)
+                            .text("Matrícula")
                         }),
                         html!("th", {
                             .class(&*CELL_CLASS)

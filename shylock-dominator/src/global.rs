@@ -14,6 +14,7 @@ pub static PROVINCES: OnceCell<BTreeSet<Province>> = OnceCell::new();
 pub static CITIES_PROVINCES: OnceCell<BTreeSet<(&str, Province)>> = OnceCell::new();
 
 pub const DEFAULT_ICON_COLOR: &str = "black";
+pub const DEFAULT_ICON_SIZE: &str = "12";
 
 pub static ROOT_CLASS: Lazy<String> = Lazy::new(|| {
     class! {
@@ -65,6 +66,15 @@ pub static ROW_CLASS: Lazy<String> = Lazy::new(|| {
 pub static CELL_CLASS: Lazy<String> = Lazy::new(|| {
     class! {
         .style("border-bottom", "1px solid")
+    }
+});
+
+pub static CELL_CLICKABLE_CLASS: Lazy<String> = Lazy::new(|| {
+    class! {
+        .style("border-bottom", "1px solid")
+        .pseudo!(":hover", {
+            .style("background-color", "coral")
+        })
     }
 });
 
