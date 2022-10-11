@@ -35,6 +35,8 @@ pub enum PropertySorting {
     None,
     ByProvince,
     ByReverseProvince,
+    ByValue,
+    ByReverseValue,
 }
 
 const DEFAULT_OPPORTUNITY_VALUE: f64 = 0.7;
@@ -46,6 +48,7 @@ pub struct PropertyPage {
     opportunity_filter: Mutable<f64>,
     province_filter: Mutable<Province>,
     province_sorting: Mutable<SortingOrder>,
+    value_sorting: Mutable<SortingOrder>,
     sorting: Mutable<PropertySorting>,
     pub map: MyMap,
 }
@@ -59,6 +62,7 @@ impl PropertyPage {
             opportunity_filter: Mutable::new(DEFAULT_OPPORTUNITY_VALUE),
             province_filter: Mutable::new(Province::All),
             province_sorting: Mutable::new(SortingOrder::None),
+            value_sorting: Mutable::new(SortingOrder::None),
             sorting: Mutable::new(PropertySorting::None),
             map: MyMap::new(THUNDERFOREST_API_KEY),
         })
@@ -264,8 +268,21 @@ impl PropertyPage {
         b.property.province.cmp(&a.property.province)
     }
 
+    fn sort_by_value(a: &Arc<PropertyView>, b: &Arc<PropertyView>) -> Ordering {
+        a.bidinfo.value.cmp(&b.bidinfo.value)
+    }
+
+    fn sort_by_reverse_value(a: &Arc<PropertyView>, b: &Arc<PropertyView>) -> Ordering {
+        b.bidinfo.value.cmp(&a.bidinfo.value)
+    }
+
     fn sort_by_none(_: &Arc<PropertyView>, _: &Arc<PropertyView>) -> Ordering {
         Ordering::Equal
+    }
+
+    fn clear_sortings(&self) {
+        *self.province_sorting.lock_mut() = SortingOrder::None;
+        *self.value_sorting.lock_mut() = SortingOrder::None;
     }
 
     fn sorting_by(
@@ -274,6 +291,8 @@ impl PropertyPage {
         match property_sorting {
             PropertySorting::ByReverseProvince => PropertyPage::sort_by_reverse_province,
             PropertySorting::ByProvince => PropertyPage::sort_by_province,
+            PropertySorting::ByValue => PropertyPage::sort_by_value,
+            PropertySorting::ByReverseValue => PropertyPage::sort_by_reverse_value,
             PropertySorting::None => PropertyPage::sort_by_none,
         }
     }
@@ -302,6 +321,7 @@ impl PropertyPage {
                             .with_node!(_th => {
                                 .event(clone!(page => move |_: events::Click| {
                                     let selection = *page.province_sorting.lock_ref();
+                                    page.clear_sortings();
                                     match selection {
                                         SortingOrder::None | SortingOrder::Up => {
                                             *page.sorting.lock_mut() = PropertySorting::ByProvince;
@@ -324,8 +344,31 @@ impl PropertyPage {
                             .text("Descripción")
                         }),
                         html!("th", {
-                            .class(&*CELL_CLASS)
+                            .class(&*CELL_CLICKABLE_CLASS)
                             .text("Valor subasta")
+                            .child_signal(page.value_sorting.signal().map(|sorting| {
+                                match sorting {
+                                    SortingOrder::None => Some(Dom::empty()),
+                                    SortingOrder::Up => Some(render_svg_arrow_up_icon(DEFAULT_ICON_COLOR, DEFAULT_ICON_SIZE)),
+                                    SortingOrder::Down => Some(render_svg_arrow_down_icon(DEFAULT_ICON_COLOR, DEFAULT_ICON_SIZE)),
+                                }
+                            }))
+                            .with_node!(_th => {
+                                .event(clone!(page => move |_: events::Click| {
+                                    let selection = *page.value_sorting.lock_ref();
+                                    page.clear_sortings();
+                                    match selection {
+                                        SortingOrder::None | SortingOrder::Up => {
+                                            *page.sorting.lock_mut() = PropertySorting::ByValue;
+                                            *page.value_sorting.lock_mut() = SortingOrder::Down;
+                                        },
+                                        SortingOrder::Down => {
+                                            *page.sorting.lock_mut() = PropertySorting::ByReverseValue;
+                                            *page.value_sorting.lock_mut() = SortingOrder::Up;
+                                        },
+                                    }
+                                }))
+                            })
                         }),
                     ])
                 }),

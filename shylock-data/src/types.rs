@@ -149,7 +149,7 @@ impl Management {
 }
 
 /// Bid information struct
-#[derive(Clone, Debug, Eq, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Deserialize, Serialize)]
 #[cfg_attr(feature = "sqlx", derive(sqlx::Type))]
 pub struct BidInfo {
     /// Valuation of the assets.
