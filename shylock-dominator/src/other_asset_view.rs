@@ -42,6 +42,7 @@ impl OtherAssetView {
                         .attr("alt", "Enlace externo a subastas BOE")
                         .attr("href", &format!("https://subastas.boe.es/detalleSubasta.php?idSub={}",&self.other.auction_id))
                         .attr("target", "_blank")
+                        .attr("rel", "external nofollow")
                         .text(&self.other.auction_id)
                         .child(render_svg_external_link_icon(DEFAULT_ICON_COLOR, DEFAULT_ICON_SIZE))
                     }))

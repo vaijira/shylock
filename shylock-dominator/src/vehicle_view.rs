@@ -42,6 +42,7 @@ impl VehicleView {
                         .attr("alt", "Enlace externo a subastas BOE")
                         .attr("href", &format!("https://subastas.boe.es/detalleSubasta.php?idSub={}",&self.vehicle.auction_id))
                         .attr("target", "_blank")
+                        .attr("rel", "external nofollow")
                         .text(&self.vehicle.auction_id)
                         .child(render_svg_external_link_icon(DEFAULT_ICON_COLOR, DEFAULT_ICON_SIZE))
                     }))
