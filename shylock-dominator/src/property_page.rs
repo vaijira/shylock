@@ -45,7 +45,8 @@ pub struct PropertyPage {
     property_list: MutableVec<Arc<PropertyView>>,
     city_options: MutableVec<&'static str>,
     city_property_filter: Mutable<&'static str>,
-    opportunity_filter: Mutable<f64>,
+    opportunity_filter: Mutable<bool>,
+    opportunity_filter_threshold: Mutable<f64>,
     province_filter: Mutable<Province>,
     province_sorting: Mutable<SortingOrder>,
     value_sorting: Mutable<SortingOrder>,
@@ -59,7 +60,8 @@ impl PropertyPage {
             property_list,
             city_options: MutableVec::new(),
             city_property_filter: Mutable::new(ALL_CITIES_STR),
-            opportunity_filter: Mutable::new(DEFAULT_OPPORTUNITY_VALUE),
+            opportunity_filter: Mutable::new(true),
+            opportunity_filter_threshold: Mutable::new(DEFAULT_OPPORTUNITY_VALUE),
             province_filter: Mutable::new(Province::All),
             province_sorting: Mutable::new(SortingOrder::None),
             value_sorting: Mutable::new(SortingOrder::None),
@@ -102,7 +104,10 @@ impl PropertyPage {
     }
 
     fn filter_by_opportunity(&self, property_view: &Arc<PropertyView>) -> bool {
-        let auction_limit = *self.opportunity_filter.lock_ref();
+        if *self.opportunity_filter.lock_ref() {
+            return true;
+        }
+        let auction_limit = *self.opportunity_filter_threshold.lock_ref();
         let target_value = property_view.bidinfo.value.to_f64().unwrap_or(0.0) * auction_limit;
 
         property_view.bidinfo.claim_quantity.to_f64().unwrap_or(0.0) > 1.0
@@ -179,7 +184,8 @@ impl PropertyPage {
                 .attr("alt", "Filtrado por oportunidades")
                 .with_node!(_input => {
                     .event(clone!(page => move |_: events::Change| {
-                        *page.opportunity_filter.lock_mut() = DEFAULT_OPPORTUNITY_VALUE;
+                        let value = *page.opportunity_filter.lock_ref();
+                        *page.opportunity_filter.lock_mut() = !value;
                         page.filter();
                      }))
                 })

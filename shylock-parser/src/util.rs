@@ -86,13 +86,14 @@ where
 pub fn normalize(str: &str) -> String {
     str.to_uppercase()
         .chars()
-        .map(|x| match x {
-            'Á' => 'A',
-            'É' => 'E',
-            'Í' => 'I',
-            'Ó' => 'O',
-            'Ú' => 'U',
-            _ => x,
+        .filter_map(|x| match x {
+            'Á' => Some('A'),
+            'É' => Some('E'),
+            'Í' => Some('I'),
+            'Ó' => Some('O'),
+            'Ú' => Some('U'),
+            '.' => None,
+            _ => Some(x),
         })
         .collect()
 }

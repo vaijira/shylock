@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use dominator::{clone, events, html, Dom};
 use futures_signals::signal::{Mutable, SignalExt};
+use rust_decimal::prelude::ToPrimitive;
 use shylock_data::{BidInfo, Vehicle};
 
 use crate::{
@@ -18,14 +19,60 @@ pub struct VehicleView {
     pub show_expanded: Mutable<bool>,
     pub filtered_in: Mutable<bool>,
     pub vehicle: &'static Vehicle,
+    pub bidinfo: BidInfo,
 }
 
 impl VehicleView {
     pub fn new(vehicle: &'static Vehicle) -> Arc<Self> {
+        let auction_bidinfo = &AUCTIONS
+            .get()
+            .unwrap()
+            .get(&vehicle.auction_id)
+            .unwrap()
+            .bidinfo;
+
+        let bidinfo = if vehicle.bidinfo.is_none() {
+            auction_bidinfo
+        } else {
+            vehicle.bidinfo.as_ref().unwrap()
+        };
+
         Arc::new(Self {
             show_expanded: Mutable::new(false),
             filtered_in: Mutable::new(true),
             vehicle,
+            bidinfo: BidInfo {
+                appraisal: if bidinfo.appraisal.to_f64().unwrap_or(0.0) > 1.0 {
+                    bidinfo.appraisal
+                } else {
+                    auction_bidinfo.appraisal
+                },
+                bid_step: if bidinfo.bid_step.to_f64().unwrap_or(0.0) > 1.0 {
+                    bidinfo.bid_step
+                } else {
+                    auction_bidinfo.bid_step
+                },
+                claim_quantity: if bidinfo.claim_quantity.to_f64().unwrap_or(0.0) > 1.0 {
+                    bidinfo.claim_quantity
+                } else {
+                    auction_bidinfo.claim_quantity
+                },
+                deposit: if bidinfo.deposit.to_f64().unwrap_or(0.0) > 1.0 {
+                    bidinfo.deposit
+                } else {
+                    auction_bidinfo.deposit
+                },
+                minimum_bid: if bidinfo.minimum_bid.to_f64().unwrap_or(0.0) > 1.0 {
+                    bidinfo.minimum_bid
+                } else {
+                    auction_bidinfo.minimum_bid
+                },
+                value: if bidinfo.value.to_f64().unwrap_or(0.0) > 1.0 {
+                    bidinfo.value
+                } else {
+                    auction_bidinfo.value
+                },
+            },
         })
     }
 

@@ -432,7 +432,7 @@ impl DbClient {
                         Ok(v) => Some(v),
                         _ => None,
                     },
-                    brand: row.get("brand"),
+                    brand: normalize(row.get("brand")),
                     category: row.get("category"),
                     charges: Decimal::new(charges, DEFAULT_DECIMALS),
                     description: row.get("description"),
@@ -440,7 +440,7 @@ impl DbClient {
                     licensed_date: row.get("licensed_date"),
                     license_plate: row.get("license_plate"),
                     localization: row.get("localization"),
-                    model: row.get("model"),
+                    model: normalize(row.get("model")),
                     visitable: row.get("visitable"),
                 }
             })

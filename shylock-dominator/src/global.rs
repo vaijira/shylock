@@ -12,6 +12,8 @@ pub static AUCTIONS: OnceCell<HashMap<String, Auction>> = OnceCell::new();
 pub static MAX_AUCTION_VALUE: OnceCell<Decimal> = OnceCell::new();
 pub static PROVINCES: OnceCell<BTreeSet<Province>> = OnceCell::new();
 pub static CITIES_PROVINCES: OnceCell<BTreeSet<(&str, Province)>> = OnceCell::new();
+pub static CAR_BRANDS: OnceCell<BTreeSet<&str>> = OnceCell::new();
+pub static CAR_BRAND_MODELS: OnceCell<BTreeSet<(&str, &str)>> = OnceCell::new();
 
 pub const DEFAULT_ICON_COLOR: &str = "black";
 pub const DEFAULT_ICON_SIZE: &str = "12";
@@ -231,6 +233,40 @@ pub(crate) async fn set_global_info() -> Result<(), JsValue> {
                     Asset::Other(_) => None,
                 })
                 .collect::<BTreeSet<(&str, Province)>>(),
+        )
+        .is_err()
+    {
+        log::error!("Not able to set cities");
+    };
+
+    if CAR_BRANDS
+        .set(
+            ASSETS
+                .get()
+                .unwrap()
+                .iter()
+                .filter_map(|asset| match asset {
+                    Asset::Vehicle(vehicle) => Some(&vehicle.brand[..]),
+                    Asset::Other(_) | Asset::Property(_) => None,
+                })
+                .collect::<BTreeSet<&str>>(),
+        )
+        .is_err()
+    {
+        log::error!("Not able to set provinces");
+    };
+
+    if CAR_BRAND_MODELS
+        .set(
+            ASSETS
+                .get()
+                .unwrap()
+                .iter()
+                .filter_map(|asset| match asset {
+                    Asset::Vehicle(vehicle) => Some((&vehicle.brand[..], &vehicle.model[..])),
+                    Asset::Other(_) | Asset::Property(_) => None,
+                })
+                .collect::<BTreeSet<(&str, &str)>>(),
         )
         .is_err()
     {
