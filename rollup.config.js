@@ -3,6 +3,8 @@ import serve from "rollup-plugin-serve";
 import livereload from "rollup-plugin-livereload";
 import { terser } from "rollup-plugin-terser";
 import copy from 'rollup-plugin-copy';
+import commonjs from '@rollup/plugin-commonjs';
+import nodeResolve from '@rollup/plugin-node-resolve';
 
 const is_watch = !!process.env.ROLLUP_WATCH;
 
@@ -20,16 +22,20 @@ export default {
             serverPath: "js/",
         }),
 
+
         copy({
             targets: [
-                { src: 'node_modules/leaflet/dist/leaflet.js', dest: 'shylock-dominator/dist/js' },
                 { src: 'node_modules/leaflet/dist/leaflet.css', dest: 'shylock-dominator/dist/css' },
-                { src: 'node_modules/leaflet/dist/leaflet.js.map', dest: 'shylock-dominator/dist/js' },
                 { src: 'node_modules/leaflet/dist/images/marker-shadow.png', dest: 'shylock-dominator/dist/css/images' },
                 { src: 'node_modules/leaflet/dist/images/marker-icon.png', dest: 'shylock-dominator/dist/css/images' },
-                { src: 'node_modules/leaflet/dist/images/marker-con-2x.png', dest: 'shylock-dominator/dist/css/images' }
+                { src: 'node_modules/leaflet/dist/images/marker-icon-2x.png', dest: 'shylock-dominator/dist/css/images' }
             ]
         }),
+
+        commonjs(),
+
+        nodeResolve(),
+
 
         is_watch && serve({
             contentBase: "shylock-dominator/dist",

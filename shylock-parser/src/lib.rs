@@ -29,10 +29,7 @@ pub mod scraper;
 /// Module with auxiliary functions.
 pub mod util;
 
-pub use self::scraper::scrape;
 pub use chrono::NaiveDate;
 pub use geo_types::Point;
 pub use rust_decimal::Decimal;
 pub use shylock_data::types::*;
-
-type AuctionMap = std::collections::HashMap<String, Auction>;

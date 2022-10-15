@@ -3,120 +3,15 @@ use std::collections::BTreeMap;
 use clap::{arg, Command};
 use env_logger::Env;
 use futures::{stream, StreamExt};
-use shylock_data::types::{Asset, Auction, LotAuctionKind, Management};
+use shylock_data::types::{Asset, Auction};
 use shylock_parser::{
     db::{DbClient, DEFAULT_DB_PATH},
     geosolver::GeoSolver,
     http::{UrlFetcher, MAIN_ALL_AUCTIONS_BOE_URL},
-    scraper::DEFAULT_COUNTRY,
-    util::{dump_to_cbor_file, extract_auction_id_from_link, extract_auction_lot_number_from_link},
+    scraper::{auction_state_page_scraper, page_scraper, DEFAULT_COUNTRY},
+    util::dump_to_cbor_file,
     AuctionState,
 };
-
-async fn process_auction_link(
-    url_fetcher: &UrlFetcher,
-    link: &(String, AuctionState),
-) -> Result<(Auction, Vec<Asset>), Box<dyn std::error::Error>> {
-    let mut assets = Vec::new();
-
-    let auction_page = url_fetcher.get_url(&link.0).await?;
-
-    let (mgm_link, asset_link) = shylock_parser::parser::parse_main_auction_links(&auction_page)?;
-    let management_page = url_fetcher.get_url(&mgm_link).await?;
-    let management = Management::new(&shylock_parser::parser::parse_management_auction_page(
-        &management_page,
-    )?);
-    log::info!("Created management: {}", management.code);
-
-    let auction = Auction::new(
-        &shylock_parser::parser::parse_main_auction_page(&auction_page)?,
-        management,
-        link.1,
-    );
-    log::info!("Created auction: {}", auction.id);
-
-    let asset_page = url_fetcher.get_url(&asset_link).await?;
-    match auction.lot_kind {
-        LotAuctionKind::NotApplicable => {
-            let asset = Asset::new(
-                &auction.id,
-                &shylock_parser::parser::parse_asset_auction_page(&asset_page)?,
-            );
-
-            assets.push(asset);
-        }
-        LotAuctionKind::Joined | LotAuctionKind::Splitted => {
-            let lot_links = shylock_parser::parser::parse_lot_auction_page_links(&asset_page)?;
-            for lot_link in lot_links.iter() {
-                let lot_page = url_fetcher.get_url(lot_link).await?;
-
-                let lot_id = extract_auction_lot_number_from_link(lot_link)?;
-
-                let asset = Asset::new(
-                    &auction.id,
-                    &shylock_parser::parser::parse_lot_auction_page(&lot_page, lot_id)?,
-                );
-                assets.push(asset);
-            }
-        }
-    }
-
-    Ok((auction, assets))
-}
-
-async fn page_scraper(
-    http_client: &UrlFetcher,
-    db_client: &DbClient,
-    result_page_url: &str,
-) -> Result<(u32, u32, u32), Box<dyn std::error::Error>> {
-    let mut auction_ok: u32 = 0;
-    let mut auction_err: u32 = 0;
-    let mut auction_already_process: u32 = 0;
-
-    log::info!("page url to process: {}", result_page_url);
-    let result_page = http_client.get_url(result_page_url).await?;
-    let auction_links = shylock_parser::parser::parse_result_page(&result_page);
-    log::info!("processing {} links", auction_links.len());
-    let number_auctions = auction_links.len();
-
-    for auction_link in auction_links {
-        let auction_id = extract_auction_id_from_link(&auction_link.0)?;
-
-        if let Ok(true) = db_client.auction_exists(auction_id).await {
-            log::info!("Auction ->{}<- previously processed", auction_id);
-            auction_already_process += 1;
-            continue;
-        }
-        match process_auction_link(http_client, &auction_link).await {
-            Ok((auction, auction_assets)) => {
-                let tx = db_client.pool.begin().await?;
-
-                db_client.insert_management(&auction.management).await;
-
-                db_client.insert_auction(&auction).await;
-
-                db_client.insert_assets(&auction, &auction_assets).await;
-
-                tx.commit().await?;
-
-                auction_ok += 1;
-            }
-            Err(err) => {
-                auction_err += 1;
-                log::warn!("Unable to process: {}", err)
-            }
-        }
-        log::info!(
-            "Auctions processed: {}/{}, Auctions errors: {}, previously processed: {}",
-            auction_ok + auction_err + auction_already_process,
-            number_auctions,
-            auction_err,
-            auction_already_process
-        );
-    }
-
-    Ok((auction_ok, auction_err, auction_already_process))
-}
 
 async fn init_scrape(db_client: &DbClient) -> Result<(), Box<dyn std::error::Error>> {
     let http_client = &UrlFetcher::new();
@@ -145,33 +40,6 @@ async fn init_scrape(db_client: &DbClient) -> Result<(), Box<dyn std::error::Err
         .await;
 
     Ok(())
-}
-
-async fn auction_state_page_scraper(
-    http_client: &UrlFetcher,
-    db_client: &DbClient,
-    auction_ids: &[String],
-    result_page_url: &str,
-) -> Result<u32, Box<dyn std::error::Error>> {
-    let mut auction_ok: u32 = 0;
-
-    log::info!("page url to process: {}", result_page_url);
-    let result_page = http_client.get_url(result_page_url).await?;
-    let auction_links = shylock_parser::parser::parse_result_page(&result_page);
-
-    for auction_link in auction_links {
-        let auction_id = extract_auction_id_from_link(&auction_link.0)?;
-
-        if auction_ids.iter().any(|s| s == auction_id) {
-            db_client
-                .update_auction_state(auction_id, auction_link.1)
-                .await?;
-            log::info!("Updated state of auction ->{}<-", auction_id);
-            auction_ok += 1;
-        }
-    }
-
-    Ok(auction_ok)
 }
 
 async fn update_scrape(db_client: &DbClient) -> Result<(), Box<dyn std::error::Error>> {

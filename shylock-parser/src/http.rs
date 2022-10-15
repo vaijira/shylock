@@ -21,54 +21,6 @@ pub trait HttpClient {
     /// Get the content of the url
     fn get_url(&self, target: &str) -> Result<String, Box<dyn std::error::Error>>;
 }
-
-#[derive(Debug)]
-pub(crate) struct BlockingUrlFetcher {
-    client: reqwest::blocking::Client,
-}
-
-impl BlockingUrlFetcher {
-    pub(crate) fn new() -> Self {
-        BlockingUrlFetcher {
-            client: reqwest::blocking::Client::builder()
-                .connect_timeout(std::time::Duration::from_secs(10))
-                .timeout(std::time::Duration::from_secs(10))
-                .user_agent(APP_USER_AGENT)
-                .cookie_store(true)
-                .tcp_nodelay(true)
-                .tcp_keepalive(std::time::Duration::from_secs(60))
-                .pool_max_idle_per_host(10)
-                .gzip(true)
-                .build()
-                .unwrap(),
-        }
-    }
-}
-
-impl HttpClient for BlockingUrlFetcher {
-    fn get_url(&self, target: &str) -> Result<String, Box<dyn std::error::Error>> {
-        let mut retries = 3;
-        while retries > 0 {
-            match self.client.get(target).send() {
-                Ok(value) => {
-                    let body = value.error_for_status()?.text()?;
-                    return Ok(body);
-                }
-                Err(value) => {
-                    retries -= 1;
-                    if retries > 0 {
-                        continue;
-                    } else {
-                        return Err(Box::new(value));
-                    }
-                }
-            }
-        }
-
-        Ok("".to_string())
-    }
-}
-
 /// HTTP client.
 #[derive(Debug)]
 pub struct UrlFetcher {

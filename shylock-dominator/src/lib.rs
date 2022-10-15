@@ -35,10 +35,11 @@ mod vehicle_view;
 pub(crate) static THUNDERFOREST_API_KEY: &str = dotenv!("THUNDERFOREST_API_KEY");
 
 #[wasm_bindgen(inline_js = r#"
+import * as L from "leaflet/dist/leaflet-src.esm.js"
+
 export class MyMap {
     constructor(apikey) {
         this._apikey = apikey;
-        
     }
 
     init_map(lat, lng) {
