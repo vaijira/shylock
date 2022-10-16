@@ -1,6 +1,5 @@
 use dominator::{clone, events, html, Dom};
 use futures_signals::signal::{Mutable, SignalExt};
-use rust_decimal::prelude::ToPrimitive;
 use shylock_data::{BidInfo, Property};
 use std::sync::Arc;
 
@@ -11,7 +10,7 @@ use crate::{
         DEFAULT_ICON_COLOR, DEFAULT_ICON_SIZE, ROW_CLASS,
     },
     property_page::PropertyPage,
-    util::{format_valuation, is_targeted_asset, summarize, DESCRIPTION_TEXT_LIMIT},
+    util::{format_valuation, is_targeted_asset, new_bidinfo, summarize, DESCRIPTION_TEXT_LIMIT},
 };
 
 #[derive(Debug)]
@@ -41,38 +40,7 @@ impl PropertyView {
             show_expanded: Mutable::new(false),
             filtered_in: Mutable::new(true),
             property,
-            bidinfo: BidInfo {
-                appraisal: if bidinfo.appraisal.to_f64().unwrap_or(0.0) > 1.0 {
-                    bidinfo.appraisal
-                } else {
-                    auction_bidinfo.appraisal
-                },
-                bid_step: if bidinfo.bid_step.to_f64().unwrap_or(0.0) > 1.0 {
-                    bidinfo.bid_step
-                } else {
-                    auction_bidinfo.bid_step
-                },
-                claim_quantity: if bidinfo.claim_quantity.to_f64().unwrap_or(0.0) > 1.0 {
-                    bidinfo.claim_quantity
-                } else {
-                    auction_bidinfo.claim_quantity
-                },
-                deposit: if bidinfo.deposit.to_f64().unwrap_or(0.0) > 1.0 {
-                    bidinfo.deposit
-                } else {
-                    auction_bidinfo.deposit
-                },
-                minimum_bid: if bidinfo.minimum_bid.to_f64().unwrap_or(0.0) > 1.0 {
-                    bidinfo.minimum_bid
-                } else {
-                    auction_bidinfo.minimum_bid
-                },
-                value: if bidinfo.value.to_f64().unwrap_or(0.0) > 1.0 {
-                    bidinfo.value
-                } else {
-                    auction_bidinfo.value
-                },
-            },
+            bidinfo: new_bidinfo(bidinfo, auction_bidinfo),
         })
     }
 

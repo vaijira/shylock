@@ -1,22 +1,33 @@
+use std::cmp::Ordering;
 use std::sync::Arc;
 
 use dominator::{clone, events, html, with_node, Dom};
-use futures_signals::signal::Mutable;
+use futures_signals::signal::{Mutable, SignalExt};
 use futures_signals::signal_vec::{MutableVec, SignalVecExt};
 use rust_decimal::prelude::ToPrimitive;
 use web_sys::{HtmlInputElement, HtmlSelectElement};
 
-use crate::feather::render_svg_crosshair_icon;
-use crate::global::{
-    CAR_BRANDS, CAR_BRAND_MODELS, CELL_CLASS, DEFAULT_ICON_COLOR, DEFAULT_ICON_SIZE,
-    FILTER_FLEX_CONTAINER_CLASS, TABLE_CLASS, TBODY_CLASS, THEAD_CLASS,
+use crate::feather::{
+    render_svg_arrow_down_icon, render_svg_arrow_up_icon, render_svg_crosshair_icon,
 };
+use crate::global::{
+    CAR_BRANDS, CAR_BRAND_MODELS, CELL_CLASS, CELL_CLICKABLE_CLASS, DEFAULT_ICON_COLOR,
+    DEFAULT_ICON_SIZE, FILTER_FLEX_CONTAINER_CLASS, TABLE_CLASS, TBODY_CLASS, THEAD_CLASS,
+};
+use crate::util::SortingOrder;
 use crate::vehicle_view::VehicleView;
 
 const ALL_BRAND_STR: &str = "Todas las marcas";
 const ALL_MODEL_STR: &str = "Todos los modelos";
 
 const DEFAULT_OPPORTUNITY_VALUE: f64 = 0.7;
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum VehicleSorting {
+    None,
+    ByValue,
+    ByReverseValue,
+}
 
 #[derive(Debug)]
 pub struct VehiclePage {
@@ -27,6 +38,8 @@ pub struct VehiclePage {
     opportunity_filter_threshold: Mutable<f64>,
     model_options: MutableVec<&'static str>,
     model_filter: Mutable<&'static str>,
+    value_sorting: Mutable<SortingOrder>,
+    sorting: Mutable<VehicleSorting>,
 }
 
 impl VehiclePage {
@@ -39,6 +52,8 @@ impl VehiclePage {
             opportunity_filter_threshold: Mutable::new(DEFAULT_OPPORTUNITY_VALUE),
             model_options: MutableVec::new(),
             model_filter: Mutable::new(ALL_MODEL_STR),
+            value_sorting: Mutable::new(SortingOrder::None),
+            sorting: Mutable::new(VehicleSorting::None),
         })
     }
 
@@ -108,6 +123,32 @@ impl VehiclePage {
             .lock_mut()
             .insert_cloned(0, ALL_BRAND_STR);
         self.update_model_options();
+    }
+
+    fn sort_by_value(a: &Arc<VehicleView>, b: &Arc<VehicleView>) -> Ordering {
+        a.bidinfo.value.cmp(&b.bidinfo.value)
+    }
+
+    fn sort_by_reverse_value(a: &Arc<VehicleView>, b: &Arc<VehicleView>) -> Ordering {
+        b.bidinfo.value.cmp(&a.bidinfo.value)
+    }
+
+    fn sort_by_none(_: &Arc<VehicleView>, _: &Arc<VehicleView>) -> Ordering {
+        Ordering::Equal
+    }
+
+    fn clear_sortings(&self) {
+        *self.value_sorting.lock_mut() = SortingOrder::None;
+    }
+
+    fn sorting_by(
+        vehicle_sorting: VehicleSorting,
+    ) -> fn(&Arc<VehicleView>, &Arc<VehicleView>) -> Ordering {
+        match vehicle_sorting {
+            VehicleSorting::ByValue => VehiclePage::sort_by_value,
+            VehicleSorting::ByReverseValue => VehiclePage::sort_by_reverse_value,
+            VehicleSorting::None => VehiclePage::sort_by_none,
+        }
     }
 
     fn render_filter_section(page: Arc<Self>) -> Dom {
@@ -207,7 +248,7 @@ impl VehiclePage {
         })
     }
 
-    fn render_table_header(&self) -> Dom {
+    fn render_table_header(page: Arc<Self>) -> Dom {
         html!("thead", {
             .class(&*THEAD_CLASS)
             .children(&mut[
@@ -235,8 +276,31 @@ impl VehiclePage {
                             .text("Descripción")
                         }),
                         html!("th", {
-                            .class(&*CELL_CLASS)
+                            .class(&*CELL_CLICKABLE_CLASS)
                             .text("Valor subasta")
+                            .child_signal(page.value_sorting.signal().map(|sorting| {
+                                match sorting {
+                                    SortingOrder::None => Some(Dom::empty()),
+                                    SortingOrder::Up => Some(render_svg_arrow_up_icon(DEFAULT_ICON_COLOR, DEFAULT_ICON_SIZE)),
+                                    SortingOrder::Down => Some(render_svg_arrow_down_icon(DEFAULT_ICON_COLOR, DEFAULT_ICON_SIZE)),
+                                }
+                            }))
+                            .with_node!(_th => {
+                                .event(clone!(page => move |_: events::Click| {
+                                    let selection = *page.value_sorting.lock_ref();
+                                    page.clear_sortings();
+                                    match selection {
+                                        SortingOrder::None | SortingOrder::Up => {
+                                            *page.sorting.lock_mut() = VehicleSorting::ByValue;
+                                            *page.value_sorting.lock_mut() = SortingOrder::Down;
+                                        },
+                                        SortingOrder::Down => {
+                                            *page.sorting.lock_mut() = VehicleSorting::ByReverseValue;
+                                            *page.value_sorting.lock_mut() = SortingOrder::Up;
+                                        },
+                                    }
+                                }))
+                            })
                         }),
                     ])
                 }),
@@ -250,11 +314,18 @@ impl VehiclePage {
             html!("table", {
                 .class(&*TABLE_CLASS)
                 .children(&mut[
-                    page.render_table_header(),
+                    VehiclePage::render_table_header(page.clone()),
                     html!("tbody", {
                         .class(&*TBODY_CLASS)
-                        .children_signal_vec(page.vehicle_list.signal_vec_cloned()
-                            .map(VehicleView::render)
+                        .children_signal_vec(
+                            page.sorting.signal_ref(|filter| *filter)
+                            .switch_signal_vec(clone!(page => move |filter| {
+                                page.vehicle_list.signal_vec_cloned()
+                                .sort_by_cloned(VehiclePage::sorting_by(filter))
+                                .map(move |view| {
+                                    VehicleView::render(view)
+                                })
+                            }))
                         )
                     }),
                 ])

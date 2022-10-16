@@ -10,7 +10,7 @@ use crate::{
         AUCTIONS, CELL_CLASS, CELL_EXPANDED_CLASS, CELL_FLEX_CONTAINER_CLASS, CELL_FLEX_ITEM_CLASS,
         DEFAULT_ICON_COLOR, DEFAULT_ICON_SIZE, ROW_CLASS,
     },
-    util::{format_valuation, is_targeted_asset, summarize, DESCRIPTION_TEXT_LIMIT},
+    util::{format_valuation, is_targeted_asset, new_bidinfo, summarize, DESCRIPTION_TEXT_LIMIT},
 };
 
 #[derive(Debug)]
@@ -18,14 +18,28 @@ pub struct OtherAssetView {
     pub show_expanded: Mutable<bool>,
     pub filtered_in: Mutable<bool>,
     pub other: &'static Other,
+    pub bidinfo: BidInfo,
 }
 
 impl OtherAssetView {
     pub fn new(other: &'static Other) -> Arc<Self> {
+        let auction_bidinfo = &AUCTIONS
+            .get()
+            .unwrap()
+            .get(&other.auction_id)
+            .unwrap()
+            .bidinfo;
+
+        let bidinfo = if other.bidinfo.is_none() {
+            auction_bidinfo
+        } else {
+            other.bidinfo.as_ref().unwrap()
+        };
         Arc::new(Self {
             show_expanded: Mutable::new(false),
             filtered_in: Mutable::new(true),
             other,
+            bidinfo: new_bidinfo(bidinfo, auction_bidinfo),
         })
     }
 

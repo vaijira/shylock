@@ -15,6 +15,7 @@ use crate::global::{
     CELL_CLASS, CELL_CLICKABLE_CLASS, DEFAULT_ICON_COLOR, DEFAULT_ICON_SIZE,
     FILTER_FLEX_CONTAINER_CLASS, TABLE_CLASS, TBODY_CLASS, THEAD_CLASS,
 };
+use crate::util::SortingOrder;
 use crate::{
     global::{CITIES_PROVINCES, PROVINCES},
     property_view::PropertyView,
@@ -23,14 +24,7 @@ use crate::{MyMap, THUNDERFOREST_API_KEY};
 
 const ALL_CITIES_STR: &str = "Todas las ciudades";
 
-#[derive(Clone, Copy, PartialEq)]
-pub enum SortingOrder {
-    None,
-    Up,
-    Down,
-}
-
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum PropertySorting {
     None,
     ByProvince,
