@@ -486,4 +486,23 @@ impl DbClient {
             .fetch_all(&self.pool)
             .await?)
     }
+
+    /// Get statistics of number of auctions by month.
+    pub async fn get_auctions_by_month_statistics(
+        &self,
+    ) -> Result<Vec<(String, u32)>, Box<dyn std::error::Error>> {
+        let result = sqlx::query(
+            r#"SELECT COUNT(*) as 'started auctions', strftime("%Y-%m", start_date) as 'year-month' 
+            FROM auctions group by strftime("%Y-%m", start_date) order by 'year-month'"#,
+        )
+        .map(|row: SqliteRow| {
+            let n: u32 = row.get(0);
+            let month: String = row.get(1);
+            (month, n)
+        })
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(result)
+    }
 }

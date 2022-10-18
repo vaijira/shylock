@@ -8,10 +8,13 @@ use shylock_parser::{
     db::{DbClient, DEFAULT_DB_PATH},
     geosolver::GeoSolver,
     http::{UrlFetcher, MAIN_ALL_AUCTIONS_BOE_URL},
+    image::create_svg_histogram,
     scraper::{auction_state_page_scraper, page_scraper, DEFAULT_COUNTRY},
     util::dump_to_cbor_file,
     AuctionState,
 };
+
+const DEFAULT_CONCURRENCY: usize = 6;
 
 async fn init_scrape(db_client: &DbClient) -> Result<(), Box<dyn std::error::Error>> {
     let http_client = &UrlFetcher::new();
@@ -24,7 +27,7 @@ async fn init_scrape(db_client: &DbClient) -> Result<(), Box<dyn std::error::Err
     let stream = stream::iter(pages_url.iter().enumerate());
 
     stream
-        .for_each_concurrent(6, |page| async move {
+        .for_each_concurrent(DEFAULT_CONCURRENCY, |page| async move {
             if let Ok((ok, err, already_proccessed)) =
                 page_scraper(http_client, db_client, page.1).await
             {
@@ -66,7 +69,7 @@ async fn update_scrape(db_client: &DbClient) -> Result<(), Box<dyn std::error::E
     let stream = stream::iter(pages_url.iter().enumerate());
 
     stream
-        .for_each_concurrent(6, |page| async move {
+        .for_each_concurrent(DEFAULT_CONCURRENCY, |page| async move {
             if let Ok(ok) =
                 auction_state_page_scraper(http_client, db_client, auction_ids, page.1).await
             {
@@ -167,6 +170,19 @@ async fn export_ongoing_auctions(db_client: &DbClient) -> Result<(), Box<dyn std
     Ok(())
 }
 
+async fn export_auction_statistics(db_client: &DbClient) -> Result<(), Box<dyn std::error::Error>> {
+    let data = db_client.get_auctions_by_month_statistics().await?;
+
+    let out_file_path = format!(
+        "{}/../shylock-dominator/dist/images/{}",
+        env!("CARGO_MANIFEST_DIR"),
+        "auctions_by_month.svg"
+    );
+    create_svg_histogram(&data[1..], &out_file_path)?;
+
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::from_env(Env::default().default_filter_or("info")).init();
@@ -179,10 +195,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .help(
                     r#"init: initialize database loading all auctions and assets.
 update: update ongoing auctions status.
-export: export ongoing auctions and assets to json files.
+export: export ongoing auctions and assets to cbor files.
+statistics: export auction statistics as images.
 "#,
                 )
-                .value_parser(["init", "update", "export"]),
+                .value_parser(["init", "update", "export", "statistics"]),
         )
         .arg(
             arg!(-d --db_path <DB_PATH> "Sets the database path, default: ./db/shylock.db")
@@ -194,7 +211,7 @@ export: export ongoing auctions and assets to json files.
 
     let db_client = DbClient::new(db_path).await?;
 
-    db_client.migrate().await?;
+    // db_client.migrate().await?;
 
     match matches
         .get_one::<String>("MODE")
@@ -210,8 +227,12 @@ export: export ongoing auctions and assets to json files.
             let _ = update_scrape(&db_client).await;
         }
         "export" => {
-            log::info!("Exporting ongoing auctions and assets to json files.");
+            log::info!("Exporting ongoing auctions and assets to cbor files.");
             let _ = export_ongoing_auctions(&db_client).await;
+        }
+        "statistics" => {
+            log::info!("Exporting auction statistics as images.");
+            let _ = export_auction_statistics(&db_client).await;
         }
         _ => unreachable!(),
     }

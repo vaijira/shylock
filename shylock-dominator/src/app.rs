@@ -71,6 +71,7 @@ impl App {
                         Self::render_button(&app, "Inmuebles", Route::Properties),
                         Self::render_button(&app, "Vehículos", Route::Vehicles),
                         Self::render_button(&app, "Otros bienes", Route::OtherAssets),
+                        Self::render_button(&app, "Estadísticas", Route::Statistics),
                     ])
                 }),
             ])
@@ -124,6 +125,20 @@ impl App {
             .class(&*SECTION_CLASS)
             .visible_signal(app.route().map(move |x| x == Route::OtherAssets))
             .children(OtherAssetPage::render(app.other_assets_page.clone()))
+        })
+    }
+
+    fn render_statistics(app: Arc<Self>) -> Dom {
+        html!("section", {
+            .class(&*SECTION_CLASS)
+            .visible_signal(app.route().map(move |x| x == Route::Statistics))
+            .children(&mut [
+                html!("img", {
+                    .attr("alt", "Subastas abiertas al mes")
+                    .attr("aria-label", "Subastas abiertas por mes")
+                    .attr("src", "images/auctions_by_month.svg")
+                }),
+            ])
         })
     }
 
@@ -215,7 +230,8 @@ impl App {
                 Self::render_home(app.clone()),
                 Self::render_properties(app.clone()),
                 Self::render_vehicles(app.clone()),
-                Self::render_other_assets(app),
+                Self::render_other_assets(app.clone()),
+                Self::render_statistics(app),
                 Self::render_footer(),
             ])
         })

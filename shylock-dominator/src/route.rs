@@ -6,6 +6,7 @@ pub enum Route {
     Properties,
     Vehicles,
     OtherAssets,
+    Statistics,
     Home,
 }
 
@@ -17,6 +18,7 @@ impl Route {
             "#/properties" => Route::Properties,
             "#/vehicles" => Route::Vehicles,
             "#/other-assets" => Route::OtherAssets,
+            "#/statistics" => Route::Statistics,
             _ => Route::Home,
         }
     }
@@ -26,6 +28,7 @@ impl Route {
             Route::Properties => "#/properties",
             Route::Vehicles => "#/vehicles",
             Route::OtherAssets => "#/other-assets",
+            Route::Statistics => "#/statistics",
             Route::Home => "#/",
         }
     }

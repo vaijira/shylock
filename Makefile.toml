@@ -60,6 +60,27 @@ args = [
 ]
 dependencies = [ "boeupdater-update" ]
 
+[tasks.boeupdater-statistics]
+workspace = false
+condition = { files_not_exist = [
+  "${CARGO_MAKE_WORKING_DIRECTORY}/shylock-dominator/auctions.cbor",
+  "${CARGO_MAKE_WORKING_DIRECTORY}/shylock-dominator/assets.cbor"
+   ] }
+command = "cargo"
+args = [
+  "run",
+  "-p",
+  "shylock-parser",
+  "--release",
+  "--bin",
+  "boeupdater",
+  "--",
+  "-d",
+  "./shylock-parser/db/shylock.db",
+  "statistics",
+]
+dependencies = [ "boeupdater-export" ]
+
 [tasks.yarn]
 workspace = false
 command = "yarn"
@@ -67,4 +88,4 @@ args = [
   "run",
   "build",
 ]
-dependencies = [ "boeupdater-export" ]
+dependencies = [ "boeupdater-statistics" ]

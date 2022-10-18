@@ -21,6 +21,8 @@ pub mod db;
 pub mod geosolver;
 /// Module communicating through http to BOE website
 pub mod http;
+/// Module to create auction related statistics images.
+pub mod image;
 /// Module to parse HTML BOE pages
 pub mod parser;
 /// Module to browse BOE website.
