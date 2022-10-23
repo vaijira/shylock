@@ -31,8 +31,11 @@ wasm-logger = "0.2"
 version = "0.3"
 features = [
     "console",
+    "Element",
     "Headers",
+    "HtmlFormElement",
     "HtmlInputElement",
+    "HtmlLinkElement",
     "HtmlSelectElement",
     "Url",
     "Response",

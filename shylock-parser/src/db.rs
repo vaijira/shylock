@@ -387,6 +387,7 @@ impl DbClient {
                         Ok(v) => Some(v),
                         _ => None,
                     },
+                    catastro_link: None,
                     catastro_reference: row.get("catastro_reference"),
                     category: row.get("category"),
                     charges: Decimal::new(charges, DEFAULT_DECIMALS),

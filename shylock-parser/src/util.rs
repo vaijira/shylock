@@ -97,3 +97,8 @@ pub fn normalize(str: &str) -> String {
         })
         .collect()
 }
+
+/// Check if string it's a valid catastro reference
+pub fn valid_catastro_reference(reference: &str) -> bool {
+    reference.len() == 20 && !reference.contains(' ')
+}

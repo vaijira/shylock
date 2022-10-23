@@ -10,7 +10,10 @@ use crate::{
         DEFAULT_ICON_COLOR, DEFAULT_ICON_SIZE, ROW_CLASS,
     },
     property_page::PropertyPage,
-    util::{format_valuation, is_targeted_asset, new_bidinfo, summarize, DESCRIPTION_TEXT_LIMIT},
+    util::{
+        format_valuation, is_targeted_asset, new_bidinfo, summarize, valid_catastro_reference,
+        DESCRIPTION_TEXT_LIMIT,
+    },
 };
 
 #[derive(Debug)]
@@ -55,13 +58,37 @@ impl PropertyView {
                     .text("Identificador subasta: ")
                     .child(html!("a",{
                         .attr("alt", "Enlace externo a subastas BOE")
-                        .attr("href", &format!("https://subastas.boe.es/detalleSubasta.php?idSub={}",&self.property.auction_id))
+                        .attr("href", &format!("https://subastas.boe.es/detalleSubasta.php?idSub={}", &self.property.auction_id))
                         .attr("target", "_blank")
                         .attr("rel", "external nofollow")
                         .text(&self.property.auction_id)
                         .child(render_svg_external_link_icon(DEFAULT_ICON_COLOR, DEFAULT_ICON_SIZE))
                     }))
                 }))
+                .child(if self.property.catastro_link.is_some() {
+                    let catastro_link = self.property.catastro_link.clone().unwrap();
+                    html!("span", {
+                        .class(&*CELL_FLEX_ITEM_CLASS)
+                        .text("Referencia catastral: ")
+                        .child(html!("a", {
+                            .attr("alt", "Enlace externo al catastro")
+                            .attr("href", &catastro_link)
+                            .attr("target", "_blank")
+                            .attr("rel", "external nofollow")
+                            .text(&self.property.catastro_reference)
+                            .child(render_svg_external_link_icon(DEFAULT_ICON_COLOR, DEFAULT_ICON_SIZE))
+                        }))
+                    }) } else if valid_catastro_reference(&self.property.catastro_reference) {
+                        html!("span", {
+                            .class(&*CELL_FLEX_ITEM_CLASS)
+                            .text("Referencia catastral: ")
+                            .text(&self.property.catastro_reference)
+                        })
+                     }
+                        else {
+                        Dom::empty()
+                    }
+                )
                 .child(html!("span", {
                     .class(&*CELL_FLEX_ITEM_CLASS)
                     .text("Ciudad: ")
@@ -142,7 +169,7 @@ impl PropertyView {
                 let current_value = *view.show_expanded.lock_ref();
                 *view.show_expanded.lock_mut() = !current_value;
                 if let Some(coordinates) = view.property.coordinates {
-                    page.map.set_view(coordinates.lat(), coordinates.lng());
+                    page.map.set_view(coordinates.y(), coordinates.x());
                 }
             }))
             .children_signal_vec(view.show_expanded.signal()

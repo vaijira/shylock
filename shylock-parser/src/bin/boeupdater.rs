@@ -10,7 +10,7 @@ use shylock_parser::{
     http::{UrlFetcher, MAIN_ALL_AUCTIONS_BOE_URL},
     image::create_svg_histogram,
     scraper::{auction_state_page_scraper, page_scraper, DEFAULT_COUNTRY},
-    util::dump_to_cbor_file,
+    util::{dump_to_cbor_file, valid_catastro_reference},
     AuctionState,
 };
 
@@ -106,7 +106,18 @@ async fn export_ongoing_auctions(db_client: &DbClient) -> Result<(), Box<dyn std
         .await?;
 
     stream::iter(properties.iter_mut())
-        .for_each(|property| async move {
+        .for_each_concurrent(DEFAULT_CONCURRENCY, |property| async move {
+            if property.catastro_link == None
+                && valid_catastro_reference(&property.catastro_reference)
+            {
+                match geosolver
+                    .get_catastro_link(&property.catastro_reference)
+                    .await
+                {
+                    Ok(link) => property.catastro_link = link,
+                    Err(error) => log::warn!("Unable to get catastro link: {}", error),
+                }
+            }
             if property.coordinates == None {
                 property.coordinates = match geosolver
                     .resolve(
@@ -115,6 +126,7 @@ async fn export_ongoing_auctions(db_client: &DbClient) -> Result<(), Box<dyn std
                         property.province.name(),
                         DEFAULT_COUNTRY,
                         &property.postal_code,
+                        &property.catastro_reference,
                     )
                     .await
                 {
@@ -193,13 +205,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .arg(
             arg!(<MODE>)
                 .help(
-                    r#"init: initialize database loading all auctions and assets.
-update: update ongoing auctions status.
-export: export ongoing auctions and assets to cbor files.
-statistics: export auction statistics as images.
+                    r#"create: creates database and tables.
+init: initializes database loading all auctions and assets.
+update: updates ongoing auctions status.
+export: exports ongoing auctions and assets to cbor files.
+statistics: exports auction statistics as images.
 "#,
                 )
-                .value_parser(["init", "update", "export", "statistics"]),
+                .value_parser(["create", "init", "update", "export", "statistics"]),
         )
         .arg(
             arg!(-d --db_path <DB_PATH> "Sets the database path, default: ./db/shylock.db")
@@ -211,13 +224,15 @@ statistics: export auction statistics as images.
 
     let db_client = DbClient::new(db_path).await?;
 
-    // db_client.migrate().await?;
-
     match matches
         .get_one::<String>("MODE")
         .expect("'MODE' is required and parsing will fail if its missing")
         .as_str()
     {
+        "create" => {
+            log::info!("Createing database and tables.");
+            db_client.migrate().await?;
+        }
         "init" => {
             log::info!("Initialization mode going to all auctions.");
             let _ = init_scrape(&db_client).await;

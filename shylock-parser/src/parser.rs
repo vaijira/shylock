@@ -1,4 +1,5 @@
 use crate::http::BASE_BOE_URL;
+use geo_types::Point;
 use scraper::{Html, Selector};
 use shylock_data::{concepts::BoeConcept, AuctionState};
 use std::collections::HashMap;
@@ -265,6 +266,67 @@ pub fn parse_result_page(page: &str) -> Vec<(String, AuctionState)> {
     }
 
     result
+}
+
+/// Parse `body` information to return catastro coordinates.
+pub fn parse_coordinates_from_catastro_cpmrc_response(
+    body: &str,
+) -> Result<Option<Point<f64>>, Box<dyn std::error::Error>> {
+    let doc = Html::parse_document(body);
+
+    let xcen_selector = Selector::parse("xcen").expect("xcen selector creation failed");
+    let data = doc
+        .select(&xcen_selector)
+        .next()
+        .ok_or("no x coordinates found")?;
+    let x_coord = data.text().collect::<String>();
+
+    let ycen_selector = Selector::parse("ycen").expect("ycen selector creation failed");
+    let data = doc
+        .select(&ycen_selector)
+        .next()
+        .ok_or("no y coordinates found")?;
+    let y_coord = data.text().collect::<String>();
+
+    Ok(Some(Point::new(
+        x_coord.parse::<f64>().unwrap(),
+        y_coord.parse::<f64>().unwrap(),
+    )))
+}
+
+/// Parse `body` information to return catastro data.
+pub fn parse_data_from_catastro_dnprc_response(
+    body: &str,
+    catastro_reference: &str,
+) -> Result<Option<String>, Box<dyn std::error::Error>> {
+    let doc = Html::parse_document(body);
+    //
+
+    let urbrus_selector = Selector::parse("cn").expect("cn selector creation failed");
+    let data = doc
+        .select(&urbrus_selector)
+        .next()
+        .ok_or("no urbrus found")?;
+    let urbrus = data.text().collect::<String>();
+
+    let cp_selector = Selector::parse("cp").expect("cp selector creation failed");
+    let data = doc
+        .select(&cp_selector)
+        .next()
+        .ok_or("no cp found")?;
+    let cp = data.text().collect::<String>();
+
+    let cmc_selector = Selector::parse("cmc").expect("cmc selector creation failed");
+    let data = doc
+        .select(&cmc_selector)
+        .next()
+        .ok_or("no cmc found")?;
+    let cmc = data.text().collect::<String>();
+
+    Ok(Some(format!(
+        r#"https://www1.sedecatastro.gob.es/CYCBienInmueble/OVCConCiud.aspx?UrbRus={}&RefC={}&esBice=&RCBice1=&RCBice2=&DenoBice=&from=OVCBusqueda&pest=rc&RCCompleta={}&final=&del={}&mun={}"#,
+        &urbrus, catastro_reference, catastro_reference, &cp, &cmc
+    )))
 }
 
 #[cfg(test)]
@@ -806,5 +868,41 @@ mod tests {
             (BASE_BOE_URL.to_owned() + "./detalleSubasta.php?idSub=SUB-AT-2020-20R4186001070&idBus=_SGFOTnU2NVlnSUwvd2czQzBFcHdoUDFlZTZGS1pLT1lwNm5pbmNIdmNGTXpLNUpZcXNGRElabzlLSGdEckkwL1NuQmpKT3lSd3Z2QTJiM0dPTURUNXBYOEhSNzhqRG5CdExSSXFxZkZSM1phdTh2bkIwUjRXaWFwdkJ2ZzNmVmV0NWc5NjJpU2FDdHQ1amc1SHJSUmhGTGFSTkk4dlFkSWYwTXA5ckFaRUh2TWtkcjM4UmFVY3VCa1JOcklEdWFDdFZpcC81Z0I4UVVYRDdqQjhLeW9RZ2R3aHpOMzRXY1cyZWJwZWRKSXY2RkRHRndmL2JIUXFQckVHdVYzUEh6VA,,", AuctionState::Ongoing)];
 
         assert_eq!(links, parse_result_page(INPUT));
+    }
+
+    #[test]
+    fn read_catastro_cpmrc_response_test() {
+        let body = r#"<consulta_coordenadas xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.catastro.meh.es/">
+        <control><cucoor>1</cucoor><cuerr>0</cuerr></control>
+        <coordenadas><coord><pc><pc1>6344205</pc1><pc2>CF7664S</pc2></pc>
+        <geo><xcen>1.52328890356962</xcen><ycen>41.2205317242857</ycen><srs>EPSG:4326</srs></geo>
+        <ldt>CL ALT EMPORDA 41 N2-51 Km:,04 EL VENDRELL (TARRAGONA)</ldt></coord></coordenadas></consulta_coordenadas>"#;
+
+        let result = parse_coordinates_from_catastro_cpmrc_response(body).unwrap();
+
+        assert_eq!(
+            Point::new(1.52328890356962, 41.2205317242857),
+            result.unwrap()
+        );
+    }
+
+    #[test]
+    fn read_catastro_dnprc_response_test() {
+        let body: &str = r#"<consulta_dnp xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.catastro.meh.es/">
+<control><cudnp>1</cudnp><cucons>2</cucons><cucul>0</cucul></control>
+<bico><bi><idbi><cn>UR</cn><rc><pc1>6344205</pc1><pc2>CF7664S</pc2><car>0001</car><cc1>G</cc1><cc2>P</cc2></rc></idbi><dt>
+<loine><cp>43</cp><cm>163</cm></loine><cmc>165</cmc><np>TARRAGONA</np><nm>EL VENDRELL</nm><locs><lous><lourb><dir><cv>2750</cv><tv>CL</tv><nv>BERGUEDA</nv>
+<pnp>35</pnp><snp>39</snp></dir><loint><es>1</es><pt>00</pt><pu>A</pu></loint><dp>43700</dp><dm>3</dm></lourb></lous></locs></dt><ldt>CL BERGUEDA 35 N2-39 Es:1 Pl:00 Pt:A 43700 EL VENDRELL (TARRAGONA)</ldt>
+<debi><luso>Residencial</luso><sfc>91</sfc><cpt>1,309000</cpt><ant>2005</ant></debi></bi><lcons><cons><lcd>VIVIENDA</lcd><dt><lourb><loint>
+<es>1</es><pt>00</pt><pu>A</pu></loint></lourb></dt><dfcons><stl>83</stl></dfcons></cons><cons><lcd>ELEMENTOS COMUNES</lcd><dfcons><stl>8</stl></dfcons></cons>
+</lcons></bico></consulta_dnp>"#;
+
+        let result = parse_data_from_catastro_dnprc_response(body, "6344205CF7664S0001GP")
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            r#"https://www1.sedecatastro.gob.es/CYCBienInmueble/OVCConCiud.aspx?UrbRus=UR&RefC=6344205CF7664S0001GP&esBice=&RCBice1=&RCBice2=&DenoBice=&from=OVCBusqueda&pest=rc&RCCompleta=6344205CF7664S0001GP&final=&del=43&mun=165"#,
+            &result
+        );
     }
 }

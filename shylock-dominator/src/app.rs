@@ -91,6 +91,31 @@ impl App {
                     ])
                     .text(" para bienes que merezcan la pena. ")
                 }),
+                html!("ul", {
+                    .text("Enlaces de interés:")
+                    .children(&mut[
+                        html!("li", {
+                            .child(html!("a", {
+                                .attr("alt", "Herramienta de valoración de inmuebles BBVA valora")
+                                .attr("href", "https://www.bbva.es/personas/experiencias/bbva-valora/analiza-vivienda.html#")
+                                .attr("target", "_blank")
+                                .attr("rel", "external nofollow")
+                                .text("BBVA Valora")
+                            }))
+                            .text(" herramienta del BBVA para valorar inmuebles.")
+                        }),
+                        html!("li", {
+                            .child(html!("a", {
+                                .attr("alt", "Herramienta de valoración de inmuebles de idealista")
+                                .attr("href", "https://www.idealista.com/valoracion-de-inmuebles/")
+                                .attr("target", "_blank")
+                                .attr("rel", "external nofollow")
+                                .text("Herramienta de idealista")
+                            }))
+                            .text(" para valoración de inmuebles.")
+                        }),
+                    ])
+                }),
                 html!("p", {
                     .children(&mut[
                         link!("mailto:contacto@coditia.com", {

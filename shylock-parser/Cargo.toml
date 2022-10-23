@@ -11,10 +11,11 @@ ciborium = "0.2"
 clap = "3.2"
 env_logger = "0.7"
 futures = "0.3"
-geo-types = { version = "0.6",  features = ["serde"] }
+geo-types = { version = "0.7", features = ["serde"] }
 lazy_static = "1.4.0"
 log = "0.4.0"
 plotters = "0.3"
+proj = { version = "0.27", features = ["geo-types"] }
 radix_trie = "0.1.6"
 regex = "1.4"
 reqwest = { version = "0.11", features = ["blocking", "cookies", "gzip", "json"] }

@@ -249,8 +249,8 @@ impl PropertyPage {
                         if let Some(coordinates) = view.property.coordinates {
                             page.map.add_marker(&view.property.auction_id,
                                 &view.property.auction_id,
-                                coordinates.lat(),
-                                coordinates.lng())
+                                coordinates.y(),
+                                coordinates.x())
                         }
                     });
 

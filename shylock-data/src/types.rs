@@ -384,6 +384,8 @@ pub struct Property {
     pub auction_id: String,
     /// Bid info
     pub bidinfo: Option<BidInfo>,
+    /// Catastro link.
+    pub catastro_link: Option<String>,
     /// Catastro reference.
     pub catastro_reference: String,
     /// category, usually: industrial, garage or apartment.
@@ -444,6 +446,7 @@ impl Property {
                 .to_string(),
             auction_id: auction.to_string(),
             bidinfo,
+            catastro_link: None,
             catastro_reference: data
                 .get(&BoeConcept::CatastroReference)
                 .unwrap_or(&String::from(NOT_APPLICABLE))
@@ -906,6 +909,7 @@ mod tests {
             address: String::from("CALLE MARIANO DE LOS COBOS 90"),
             auction_id: id.to_string(),
             bidinfo: None,
+            catastro_link: None,
             catastro_reference: String::from("4110202UM5141A0003HH"),
             category: PropertyCategory::Apartment,
             charges: Decimal::new(0, DEFAULT_DECIMALS),
@@ -990,6 +994,7 @@ mod tests {
                 minimum_bid: Decimal::new(0, DEFAULT_DECIMALS),
                 value: Decimal::new(15_100_00, DEFAULT_DECIMALS),
             }),
+            catastro_link: None,
             catastro_reference: String::from("4110202UM5141A0003HH"),
             category: PropertyCategory::Apartment,
             charges: Decimal::new(0, DEFAULT_DECIMALS),

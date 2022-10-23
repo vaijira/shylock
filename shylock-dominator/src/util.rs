@@ -104,3 +104,8 @@ pub fn new_bidinfo(bidinfo: &BidInfo, auction_bidinfo: &BidInfo) -> BidInfo {
         },
     }
 }
+
+/// Check if string it's a valid catastro reference
+pub fn valid_catastro_reference(reference: &str) -> bool {
+    reference.len() == 20 && !reference.contains(' ')
+}
