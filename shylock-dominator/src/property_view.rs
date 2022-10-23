@@ -1,4 +1,4 @@
-use dominator::{clone, events, html, Dom};
+use dominator::{clone, events, html, Dom, EventOptions};
 use futures_signals::signal::{Mutable, SignalExt};
 use shylock_data::{BidInfo, Property};
 use std::sync::Arc;
@@ -18,6 +18,7 @@ use crate::{
 
 #[derive(Debug)]
 pub struct PropertyView {
+    pub anchor_hovered: Mutable<bool>,
     pub show_expanded: Mutable<bool>,
     pub filtered_in: Mutable<bool>,
     pub property: &'static Property,
@@ -40,6 +41,7 @@ impl PropertyView {
         };
 
         Arc::new(Self {
+            anchor_hovered: Mutable::new(false),
             show_expanded: Mutable::new(false),
             filtered_in: Mutable::new(true),
             property,
@@ -47,7 +49,7 @@ impl PropertyView {
         })
     }
 
-    fn render_expanded(&self) -> Dom {
+    fn render_expanded(view: Arc<Self>) -> Dom {
         html!("td", {
             .attr("colspan", "5")
             .class(&*CELL_EXPANDED_CLASS)
@@ -58,15 +60,21 @@ impl PropertyView {
                     .text("Identificador subasta: ")
                     .child(html!("a",{
                         .attr("alt", "Enlace externo a subastas BOE")
-                        .attr("href", &format!("https://subastas.boe.es/detalleSubasta.php?idSub={}", &self.property.auction_id))
+                        .attr("href", &format!("https://subastas.boe.es/detalleSubasta.php?idSub={}", &view.property.auction_id))
                         .attr("target", "_blank")
                         .attr("rel", "external nofollow")
-                        .text(&self.property.auction_id)
+                        .text(&view.property.auction_id)
                         .child(render_svg_external_link_icon(DEFAULT_ICON_COLOR, DEFAULT_ICON_SIZE))
+                        .event(clone!(view => move |_: events::MouseEnter| {
+                            *view.anchor_hovered.lock_mut() = true;
+                        }))
+                        .event(clone!(view => move |_: events::MouseLeave| {
+                            *view.anchor_hovered.lock_mut() = false;
+                        }))
                     }))
                 }))
-                .child(if self.property.catastro_link.is_some() {
-                    let catastro_link = self.property.catastro_link.clone().unwrap();
+                .child(if view.property.catastro_link.is_some() {
+                    let catastro_link = view.property.catastro_link.clone().unwrap();
                     html!("span", {
                         .class(&*CELL_FLEX_ITEM_CLASS)
                         .text("Referencia catastral: ")
@@ -75,14 +83,20 @@ impl PropertyView {
                             .attr("href", &catastro_link)
                             .attr("target", "_blank")
                             .attr("rel", "external nofollow")
-                            .text(&self.property.catastro_reference)
+                            .text(&view.property.catastro_reference)
                             .child(render_svg_external_link_icon(DEFAULT_ICON_COLOR, DEFAULT_ICON_SIZE))
+                            .event(clone!(view => move |_: events::MouseEnter| {
+                                *view.anchor_hovered.lock_mut() = true;
+                            }))
+                            .event(clone!(view => move |_: events::MouseLeave| {
+                                *view.anchor_hovered.lock_mut() = false;
+                            }))
                         }))
-                    }) } else if valid_catastro_reference(&self.property.catastro_reference) {
+                    }) } else if valid_catastro_reference(&view.property.catastro_reference) {
                         html!("span", {
                             .class(&*CELL_FLEX_ITEM_CLASS)
                             .text("Referencia catastral: ")
-                            .text(&self.property.catastro_reference)
+                            .text(&view.property.catastro_reference)
                         })
                      }
                         else {
@@ -92,40 +106,40 @@ impl PropertyView {
                 .child(html!("span", {
                     .class(&*CELL_FLEX_ITEM_CLASS)
                     .text("Ciudad: ")
-                    .text(&self.property.city)
+                    .text(&view.property.city)
                     .text(".")
                 }))
                 .child(html!("span", {
                     .class(&*CELL_FLEX_ITEM_CLASS)
                     .text("Provincia: ")
-                    .text(self.property.province.name())
+                    .text(view.property.province.name())
                     .text(".")
                 }))
                 .child(html!("span", {
                     .class(&*CELL_FLEX_ITEM_CLASS)
                     .text("Descripción: ")
-                    .text(&self.property.description)
+                    .text(&view.property.description)
                     .text(
-                        if self.property.description.ends_with('.') { "" }
+                        if view.property.description.ends_with('.') { "" }
                         else {"."}
                     )
                 }))
                 .child(html!("span", {
                     .class(&*CELL_FLEX_ITEM_CLASS)
                     .text("Valor subasta: ")
-                    .text(&format_valuation(&self.bidinfo.value))
+                    .text(&format_valuation(&view.bidinfo.value))
                     .text(" €.")
                 }))
                 .child(html!("span", {
                     .class(&*CELL_FLEX_ITEM_CLASS)
                     .text("Cantidad reclamada: ")
-                    .text(&format_valuation(&self.bidinfo.claim_quantity))
+                    .text(&format_valuation(&view.bidinfo.claim_quantity))
                     .text(" €.")
                 }))
                 .child(html!("span", {
                     .class(&*CELL_FLEX_ITEM_CLASS)
                     .text("Valor tasación: ")
-                    .text(&format_valuation(&self.bidinfo.appraisal))
+                    .text(&format_valuation(&view.bidinfo.appraisal))
                     .text(" €.")
                 }))
             }))
@@ -165,7 +179,10 @@ impl PropertyView {
         html!("tr", {
             .visible_signal(view.filtered_in.signal())
             .class(&*ROW_CLASS)
-            .event(clone!(view => move |_: events::Click| {
+            .event_with_options(&EventOptions::default(), clone!(view => move |_: events::Click| {
+                if *view.anchor_hovered.lock_ref() {
+                    return;
+                }
                 let current_value = *view.show_expanded.lock_ref();
                 *view.show_expanded.lock_mut() = !current_value;
                 if let Some(coordinates) = view.property.coordinates {
@@ -175,7 +192,7 @@ impl PropertyView {
             .children_signal_vec(view.show_expanded.signal()
                 .map(clone!(view => move |x|
                     if x {
-                        vec![view.render_expanded()]
+                        vec![PropertyView::render_expanded(view.clone())]
                     } else {
                         view.render_compacted()
                     }

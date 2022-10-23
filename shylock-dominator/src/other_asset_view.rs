@@ -15,6 +15,7 @@ use crate::{
 
 #[derive(Debug)]
 pub struct OtherAssetView {
+    pub anchor_hovered: Mutable<bool>,
     pub show_expanded: Mutable<bool>,
     pub filtered_in: Mutable<bool>,
     pub other: &'static Other,
@@ -36,6 +37,7 @@ impl OtherAssetView {
             other.bidinfo.as_ref().unwrap()
         };
         Arc::new(Self {
+            anchor_hovered: Mutable::new(false),
             show_expanded: Mutable::new(false),
             filtered_in: Mutable::new(true),
             other,
@@ -43,7 +45,7 @@ impl OtherAssetView {
         })
     }
 
-    fn render_expanded(&self, bidinfo: &BidInfo) -> Dom {
+    fn render_expanded(view: Arc<Self>, bidinfo: &BidInfo) -> Dom {
         html!("td", {
             .attr("colspan", "5")
             .class(&*CELL_EXPANDED_CLASS)
@@ -54,34 +56,40 @@ impl OtherAssetView {
                     .text("Identificador subasta: ")
                     .child(html!("a",{
                         .attr("alt", "Enlace externo a subastas BOE")
-                        .attr("href", &format!("https://subastas.boe.es/detalleSubasta.php?idSub={}",&self.other.auction_id))
+                        .attr("href", &format!("https://subastas.boe.es/detalleSubasta.php?idSub={}",&view.other.auction_id))
                         .attr("target", "_blank")
                         .attr("rel", "external nofollow")
-                        .text(&self.other.auction_id)
+                        .text(&view.other.auction_id)
                         .child(render_svg_external_link_icon(DEFAULT_ICON_COLOR, DEFAULT_ICON_SIZE))
+                        .event(clone!(view => move |_: events::MouseEnter| {
+                            *view.anchor_hovered.lock_mut() = true;
+                        }))
+                        .event(clone!(view => move |_: events::MouseLeave| {
+                            *view.anchor_hovered.lock_mut() = false;
+                        }))
                     }))
                 }))
                 .child(html!("span", {
                     .class(&*CELL_FLEX_ITEM_CLASS)
                     .text("Categoría: ")
-                    .text(self.other.category.name())
+                    .text(view.other.category.name())
                     .text(".")
                 }))
                 .child(html!("span", {
                     .class(&*CELL_FLEX_ITEM_CLASS)
                     .text("Descripción: ")
-                    .text(&self.other.description)
+                    .text(&view.other.description)
                     .text(
-                        if self.other.description.ends_with('.') { "" }
+                        if view.other.description.ends_with('.') { "" }
                         else {"."}
                     )
                 }))
                 .child(html!("span", {
                     .class(&*CELL_FLEX_ITEM_CLASS)
                     .text("Información adicional: ")
-                    .text(&self.other.additional_information)
+                    .text(&view.other.additional_information)
                     .text(
-                        if self.other.additional_information.ends_with('.') { "" }
+                        if view.other.additional_information.ends_with('.') { "" }
                         else {"."}
                     )
                 }))
@@ -154,13 +162,16 @@ impl OtherAssetView {
             .visible_signal(view.filtered_in.signal())
             .class(&*ROW_CLASS)
             .event(clone!(view => move |_: events::Click| {
+                if *view.anchor_hovered.lock_ref() {
+                    return;
+                }
                 let current_value = *view.show_expanded.lock_ref();
                 *view.show_expanded.lock_mut() = !current_value;
             }))
             .children_signal_vec(view.show_expanded.signal()
                 .map(clone!(view => move |x|
                     if x {
-                        vec![view.render_expanded(bidinfo)]
+                        vec![OtherAssetView::render_expanded(view.clone(), bidinfo)]
                     } else {
                         view.render_compacted(bidinfo)
                     }

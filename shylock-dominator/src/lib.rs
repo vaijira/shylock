@@ -100,6 +100,10 @@ extern "C" {
 #[wasm_bindgen(start)]
 /// Main point of wasm app entry
 pub async fn main_js() -> Result<(), JsValue> {
+    wasm_logger::init(
+        wasm_logger::Config::new(log::Level::Info).module_prefix(env!("CARGO_PKG_NAME")),
+    );
+
     #[cfg(debug_assertions)]
     console_error_panic_hook::set_once();
 

@@ -15,6 +15,7 @@ use crate::{
 
 #[derive(Debug)]
 pub struct VehicleView {
+    pub anchor_hovered: Mutable<bool>,
     pub show_expanded: Mutable<bool>,
     pub filtered_in: Mutable<bool>,
     pub vehicle: &'static Vehicle,
@@ -37,6 +38,7 @@ impl VehicleView {
         };
 
         Arc::new(Self {
+            anchor_hovered: Mutable::new(false),
             show_expanded: Mutable::new(false),
             filtered_in: Mutable::new(true),
             vehicle,
@@ -44,7 +46,7 @@ impl VehicleView {
         })
     }
 
-    fn render_expanded(&self, bidinfo: &BidInfo) -> Dom {
+    fn render_expanded(view: Arc<Self>, bidinfo: &BidInfo) -> Dom {
         html!("td", {
             .attr("colspan", "5")
             .class(&*CELL_EXPANDED_CLASS)
@@ -55,33 +57,39 @@ impl VehicleView {
                     .text("Identificador subasta: ")
                     .child(html!("a",{
                         .attr("alt", "Enlace externo a subastas BOE")
-                        .attr("href", &format!("https://subastas.boe.es/detalleSubasta.php?idSub={}",&self.vehicle.auction_id))
+                        .attr("href", &format!("https://subastas.boe.es/detalleSubasta.php?idSub={}", &view.vehicle.auction_id))
                         .attr("target", "_blank")
                         .attr("rel", "external nofollow")
-                        .text(&self.vehicle.auction_id)
+                        .text(&view.vehicle.auction_id)
                         .child(render_svg_external_link_icon(DEFAULT_ICON_COLOR, DEFAULT_ICON_SIZE))
+                        .event(clone!(view => move |_: events::MouseEnter| {
+                            *view.anchor_hovered.lock_mut() = true;
+                        }))
+                        .event(clone!(view => move |_: events::MouseLeave| {
+                            *view.anchor_hovered.lock_mut() = false;
+                        }))
                     }))
                 }))
                 .child(html!("span", {
                     .class(&*CELL_FLEX_ITEM_CLASS)
                     .text("Marca y modelo: ")
-                    .text(&self.vehicle.brand)
+                    .text(&view.vehicle.brand)
                     .text(" ")
-                    .text(&self.vehicle.model)
+                    .text(&view.vehicle.model)
                     .text(".")
                 }))
                 .child(html!("span", {
                     .class(&*CELL_FLEX_ITEM_CLASS)
                     .text("Categoría: ")
-                    .text(self.vehicle.category.name())
+                    .text(view.vehicle.category.name())
                     .text(".")
                 }))
                 .child(html!("span", {
                     .class(&*CELL_FLEX_ITEM_CLASS)
                     .text("Descripción: ")
-                    .text(&self.vehicle.description)
+                    .text(&view.vehicle.description)
                     .text(
-                        if self.vehicle.description.ends_with('.') { "" }
+                        if view.vehicle.description.ends_with('.') { "" }
                         else {"."}
                     )
                 }))
@@ -157,13 +165,16 @@ impl VehicleView {
             .visible_signal(view.filtered_in.signal())
             .class(&*ROW_CLASS)
             .event(clone!(view => move |_: events::Click| {
+                if *view.anchor_hovered.lock_ref() {
+                    return;
+                }
                 let current_value = *view.show_expanded.lock_ref();
                 *view.show_expanded.lock_mut() = !current_value;
             }))
             .children_signal_vec(view.show_expanded.signal()
                 .map(clone!(view => move |x|
                     if x {
-                        vec![view.render_expanded(bidinfo)]
+                        vec![VehicleView::render_expanded(view.clone(), bidinfo)]
                     } else {
                         view.render_compacted(bidinfo)
                     }
