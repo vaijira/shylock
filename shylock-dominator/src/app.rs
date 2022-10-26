@@ -91,10 +91,10 @@ impl App {
                     ])
                     .text(" para bienes que merezcan la pena. ")
                 }),
-                html!("ul", {
+                html!("p", {
                     .text("Enlaces de interés:")
                     .children(&mut[
-                        html!("li", {
+                        html!("p", {
                             .child(html!("a", {
                                 .attr("alt", "Herramienta de valoración de inmuebles BBVA valora")
                                 .attr("href", "https://www.bbva.es/personas/experiencias/bbva-valora/analiza-vivienda.html#")
@@ -104,7 +104,7 @@ impl App {
                             }))
                             .text(" herramienta del BBVA para valorar inmuebles.")
                         }),
-                        html!("li", {
+                        html!("p", {
                             .child(html!("a", {
                                 .attr("alt", "Herramienta de valoración de inmuebles de idealista")
                                 .attr("href", "https://www.idealista.com/valoracion-de-inmuebles/")
@@ -116,15 +116,6 @@ impl App {
                         }),
                     ])
                 }),
-                html!("p", {
-                    .children(&mut[
-                        link!("mailto:contacto@coditia.com", {
-                            .attr("alt", "email contacto")
-                            .text("Escríbeme")
-                        }),
-                     ])
-                     .text(" para cualquier duda o sugerencia.")
-                })
             ])
         })
     }
@@ -227,6 +218,15 @@ impl App {
                     }),
 
                 ])
+            }),
+            html!("p", {
+                .children(&mut[
+                    link!("mailto:contacto@coditia.com", {
+                        .attr("alt", "email contacto")
+                        .text("Escríbeme")
+                    }),
+                 ])
+                 .text(" para cualquier duda o sugerencia.")
             }),
             html!("p",{
                 .text(build_time_local!("Última actualización: %e de %B del %Y"))

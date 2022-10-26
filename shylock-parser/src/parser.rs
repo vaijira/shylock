@@ -310,17 +310,11 @@ pub fn parse_data_from_catastro_dnprc_response(
     let urbrus = data.text().collect::<String>();
 
     let cp_selector = Selector::parse("cp").expect("cp selector creation failed");
-    let data = doc
-        .select(&cp_selector)
-        .next()
-        .ok_or("no cp found")?;
+    let data = doc.select(&cp_selector).next().ok_or("no cp found")?;
     let cp = data.text().collect::<String>();
 
     let cmc_selector = Selector::parse("cmc").expect("cmc selector creation failed");
-    let data = doc
-        .select(&cmc_selector)
-        .next()
-        .ok_or("no cmc found")?;
+    let data = doc.select(&cmc_selector).next().ok_or("no cmc found")?;
     let cmc = data.text().collect::<String>();
 
     Ok(Some(format!(

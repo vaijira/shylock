@@ -115,7 +115,11 @@ async fn export_ongoing_auctions(db_client: &DbClient) -> Result<(), Box<dyn std
                     .await
                 {
                     Ok(link) => property.catastro_link = link,
-                    Err(error) => log::warn!("Unable to get catastro link: {}", error),
+                    Err(error) => log::warn!(
+                        "Unable to get catastro link {} for catastro reference: {}",
+                        error,
+                        &property.catastro_reference
+                    ),
                 }
             }
             if property.coordinates == None {
