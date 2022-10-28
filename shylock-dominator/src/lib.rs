@@ -23,8 +23,10 @@ use wasm_bindgen::prelude::*;
 mod app;
 mod feather;
 mod global;
+mod leaflet;
 mod other_asset_page;
 mod other_asset_view;
+mod property_map_page;
 mod property_page;
 mod property_view;
 mod route;
@@ -33,69 +35,6 @@ mod vehicle_page;
 mod vehicle_view;
 
 pub(crate) static THUNDERFOREST_API_KEY: &str = dotenv!("THUNDERFOREST_API_KEY");
-
-#[wasm_bindgen(inline_js = r#"
-import * as L from "leaflet/dist/leaflet-src.esm.js"
-
-export class MyMap {
-    constructor(apikey) {
-        this._apikey = apikey;
-    }
-
-    init_map(lat, lng) {
-        this._mymap = L.map('mapid', {
-            center: [lat, lng],
-            zoom: 5,
-            zoomDelta: 2
-        });
-
-        L.tileLayer('https://tile.thunderforest.com/atlas/{z}/{x}/{y}.png?apikey={accessToken}', {
-            attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Imagery © <a href="https://www.thunderforest.com/">Thunderforest</a>',
-            maxZoom: 18,
-            id: 'mapbox/streets-v11',
-            tileSize: 512,
-            zoomOffset: -1,
-            accessToken: this._apikey
-        }).addTo(this._mymap);
-    }
-
-    add_marker(title_text, alt_text, lat, lng) {
-        var marker = L.marker([lat, lng], {
-            alt: alt_text,
-            title: title_text
-        }).addTo(this._mymap);
-
-        var map = this._mymap;
-
-        marker.on('click', function(e) {
-            map.setView([lat, lng], 15);
-        });
-
-        marker.on('dblclick', function(e) {
-            window.open('https://subastas.boe.es/detalleSubasta.php?idSub=' + marker.options['title'], '_blank');
-        });
-    }
-
-    set_view(lat, lng) {
-        this._mymap.setView([lat, lng], 15);
-    }
-}
-"#)]
-extern "C" {
-    pub type MyMap;
-
-    #[wasm_bindgen(constructor)]
-    pub fn new(apikey: &str) -> MyMap;
-
-    #[wasm_bindgen(method)]
-    pub fn init_map(this: &MyMap, lat: f64, lng: f64);
-
-    #[wasm_bindgen(method)]
-    pub fn add_marker(this: &MyMap, title: &str, alt: &str, lat: f64, lng: f64);
-
-    #[wasm_bindgen(method)]
-    pub fn set_view(this: &MyMap, lat: f64, lng: f64);
-}
 
 #[wasm_bindgen(start)]
 /// Main point of wasm app entry

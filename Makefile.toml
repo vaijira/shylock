@@ -58,7 +58,7 @@ args = [
   "./shylock-parser/db/shylock.db",
   "statistics",
 ]
-dependencies = [ "boeupdater-update" ]
+dependencies = [ "boeupdater-export" ]
 
 [tasks.boeupdater-export]
 workspace = false
@@ -79,7 +79,6 @@ args = [
   "./shylock-parser/db/shylock.db",
   "export",
 ]
-dependencies = [ "boeupdater-statistics" ]
 
 [tasks.yarn]
 workspace = false
@@ -88,4 +87,4 @@ args = [
   "run",
   "build",
 ]
-dependencies = [ "boeupdater-statistics" ]
+dependencies = [ "boeupdater-statistics", "boeupdater-export" ]

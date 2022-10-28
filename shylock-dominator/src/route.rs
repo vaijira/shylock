@@ -4,6 +4,7 @@ use web_sys::Url;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Route {
     Properties,
+    PropertiesMap,
     Vehicles,
     OtherAssets,
     Statistics,
@@ -16,6 +17,7 @@ impl Route {
         let url = Url::new(url).unwrap();
         match url.hash().as_str() {
             "#/properties" => Route::Properties,
+            "#/properties-map" => Route::PropertiesMap,
             "#/vehicles" => Route::Vehicles,
             "#/other-assets" => Route::OtherAssets,
             "#/statistics" => Route::Statistics,
@@ -26,6 +28,7 @@ impl Route {
     pub fn to_url(self) -> &'static str {
         match self {
             Route::Properties => "#/properties",
+            Route::PropertiesMap => "#/properties-map",
             Route::Vehicles => "#/vehicles",
             Route::OtherAssets => "#/other-assets",
             Route::Statistics => "#/statistics",

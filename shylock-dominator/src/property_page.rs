@@ -20,7 +20,6 @@ use crate::{
     global::{CITIES_PROVINCES, PROVINCES},
     property_view::PropertyView,
 };
-use crate::{MyMap, THUNDERFOREST_API_KEY};
 
 const ALL_CITIES_STR: &str = "Todas las ciudades";
 
@@ -45,7 +44,6 @@ pub struct PropertyPage {
     province_sorting: Mutable<SortingOrder>,
     value_sorting: Mutable<SortingOrder>,
     sorting: Mutable<PropertySorting>,
-    pub map: MyMap,
 }
 
 impl PropertyPage {
@@ -60,7 +58,6 @@ impl PropertyPage {
             province_sorting: Mutable::new(SortingOrder::None),
             value_sorting: Mutable::new(SortingOrder::None),
             sorting: Mutable::new(PropertySorting::None),
-            map: MyMap::new(THUNDERFOREST_API_KEY),
         })
     }
 
@@ -237,25 +234,6 @@ impl PropertyPage {
                      }))
                 })
             }),
-            html!("div", {
-                .attr("id", "mapid")
-                .style("z-index", "2147483647")
-                .style("height", "250px")
-                .style("width", "500px")
-                .style("right", "5px")
-                .after_inserted(clone!(page => move |_| {
-                    page.map.init_map(39.61, -3.69);
-                    page.property_list.lock_ref().iter().for_each(|view| {
-                        if let Some(coordinates) = view.property.coordinates {
-                            page.map.add_marker(&view.property.auction_id,
-                                &view.property.auction_id,
-                                coordinates.y(),
-                                coordinates.x())
-                        }
-                    });
-
-                }))
-            }),
             ])
         })
     }
@@ -390,9 +368,9 @@ impl PropertyPage {
                             .switch_signal_vec(clone!(page => move |filter| {
                                 page.property_list.signal_vec_cloned()
                                 .sort_by_cloned(PropertyPage::sorting_by(filter))
-                                .map(clone!(page => move |view| {
-                                    PropertyView::render(page.clone(), view)
-                                }))
+                                .map(move |view| {
+                                    PropertyView::render(view)
+                                })
                             }))
                         )
                     }),
