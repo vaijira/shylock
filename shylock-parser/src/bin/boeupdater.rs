@@ -10,7 +10,7 @@ use shylock_parser::{
     http::{UrlFetcher, MAIN_ALL_AUCTIONS_BOE_URL},
     image::create_svg_histogram,
     scraper::{auction_state_page_scraper, page_scraper, DEFAULT_COUNTRY},
-    util::{dump_to_cbor_file, valid_catastro_reference},
+    util::{dump_to_cbor_compressed_file, valid_catastro_reference},
     AuctionState,
 };
 
@@ -97,9 +97,9 @@ async fn export_ongoing_auctions(db_client: &DbClient) -> Result<(), Box<dyn std
     let auction_file = format!(
         "{}/../shylock-dominator/{}",
         env!("CARGO_MANIFEST_DIR"),
-        "auctions.cbor"
+        "auctions.cbor.zlib"
     );
-    dump_to_cbor_file(&auction_file, &auctions)?;
+    dump_to_cbor_compressed_file(&auction_file, &auctions)?;
 
     let mut properties = db_client
         .get_properties_with_auction_states(&[AuctionState::Ongoing])
@@ -179,9 +179,9 @@ async fn export_ongoing_auctions(db_client: &DbClient) -> Result<(), Box<dyn std
     let assets_file = format!(
         "{}/../shylock-dominator/{}",
         env!("CARGO_MANIFEST_DIR"),
-        "assets.cbor"
+        "assets.cbor.zlib"
     );
-    dump_to_cbor_file(&assets_file, &assets)?;
+    dump_to_cbor_compressed_file(&assets_file, &assets)?;
 
     Ok(())
 }

@@ -1,6 +1,8 @@
+use miniz_oxide::deflate::compress_to_vec;
 use serde::Serialize;
 use std::fs::File;
 use std::io;
+use std::io::Write;
 use std::str;
 
 // Constant for parsing lot number.
@@ -66,16 +68,24 @@ where
 }
 
 /// Serialize  `data` to cbor files in given `dst_path`.
-pub fn dump_to_cbor_file<T>(dst_path: &str, data: &T) -> Result<(), Box<dyn std::error::Error>>
+pub fn dump_to_cbor_compressed_file<T>(
+    dst_path: &str,
+    data: &T,
+) -> Result<(), Box<dyn std::error::Error>>
 where
     T: Serialize,
 {
-    let mut dest = {
+    let mut tmp_buffer = vec![];
+    ciborium::ser::into_writer(&data, &mut tmp_buffer)?;
+
+    let mut file = {
         log::info!("data cbor file will be located under: '{:?}'", dst_path);
         File::create(dst_path)?
     };
 
-    ciborium::ser::into_writer(&data, &mut dest)?;
+    let compressed = compress_to_vec(&tmp_buffer, 7);
+
+    file.write_all(compressed.as_slice())?;
 
     log::info!("data cbor file created");
 

@@ -13,7 +13,8 @@ env_logger = "0.7"
 futures = "0.3"
 geo-types = { version = "0.7", features = ["serde"] }
 lazy_static = "1.4.0"
-log = "0.4.0"
+log = "0.4"
+miniz_oxide = "0.6"
 plotters = "0.3"
 proj = { version = "0.27", features = ["geo-types"] }
 radix_trie = "0.1.6"

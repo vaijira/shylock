@@ -1,0 +1,51 @@
+name: shylock main action
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  lint:
+    name: Format & Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - uses: Swatinem/rust-cache@v1
+
+      - uses: actions-rs/toolchain@v1
+        # for wasm-bindgen-cli, always use stable rust
+        with:
+          toolchain: stable
+          profile: minimal
+          target: wasm32-unknown-unknown
+          override: true
+          components: rustfmt, clippy
+
+      - name: Make envfile
+        uses: SpicyPizza/create-envfile@v1
+        with:
+          envkey_THUNDERFOREST_API_KEY: "1"
+          file_name: .env
+
+      - name: Run fmt
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+
+      - name: Run clippy for shylock-data
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: -p shylock-data --target wasm32-unknown-unknown
+
+      - name: Run clippy for shylock-parser
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: -p shylock-data --target wasm32-unknown-unknown

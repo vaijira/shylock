@@ -1,8 +1,8 @@
 [tasks.boeupdater-init]
 workspace = false
 condition = { files_not_exist = [
-  "${CARGO_MAKE_WORKING_DIRECTORY}/shylock-dominator/auctions.cbor",
-  "${CARGO_MAKE_WORKING_DIRECTORY}/shylock-dominator/assets.cbor"
+  "${CARGO_MAKE_WORKING_DIRECTORY}/shylock-dominator/auctions.cbor.zlib",
+  "${CARGO_MAKE_WORKING_DIRECTORY}/shylock-dominator/assets.cbor.zlib"
    ] }
 command = "cargo"
 args = [
@@ -21,8 +21,8 @@ args = [
 [tasks.boeupdater-update]
 workspace = false
 condition = { files_not_exist = [
-  "${CARGO_MAKE_WORKING_DIRECTORY}/shylock-dominator/auctions.cbor",
-  "${CARGO_MAKE_WORKING_DIRECTORY}/shylock-dominator/assets.cbor"
+  "${CARGO_MAKE_WORKING_DIRECTORY}/shylock-dominator/auctions.cbor.zlib",
+  "${CARGO_MAKE_WORKING_DIRECTORY}/shylock-dominator/assets.cbor.zlib"
    ] }
 command = "cargo"
 args = [
@@ -41,10 +41,6 @@ dependencies = [ "boeupdater-init" ]
 
 [tasks.boeupdater-statistics]
 workspace = false
-condition = { files_not_exist = [
-  "${CARGO_MAKE_WORKING_DIRECTORY}/shylock-dominator/auctions.cbor",
-  "${CARGO_MAKE_WORKING_DIRECTORY}/shylock-dominator/assets.cbor"
-   ] }
 command = "cargo"
 args = [
   "run",
@@ -63,8 +59,8 @@ dependencies = [ "boeupdater-export" ]
 [tasks.boeupdater-export]
 workspace = false
 condition = { files_not_exist = [
-  "${CARGO_MAKE_WORKING_DIRECTORY}/shylock-dominator/auctions.cbor",
-  "${CARGO_MAKE_WORKING_DIRECTORY}/shylock-dominator/assets.cbor"
+  "${CARGO_MAKE_WORKING_DIRECTORY}/shylock-dominator/auctions.cbor.zlib",
+  "${CARGO_MAKE_WORKING_DIRECTORY}/shylock-dominator/assets.cbor.zlib"
    ] }
 command = "cargo"
 args = [
@@ -79,6 +75,19 @@ args = [
   "./shylock-parser/db/shylock.db",
   "export",
 ]
+dependencies = [ "boeupdater-update" ]
+
+[tasks.clean]
+workspace = false
+command = "rm"
+args = [
+  "-f",
+  "${CARGO_MAKE_WORKING_DIRECTORY}/shylock-dominator/dist/images/auctions_by_month.svg",
+  "${CARGO_MAKE_WORKING_DIRECTORY}/shylock-dominator/auctions.cbor.zlib",
+  "${CARGO_MAKE_WORKING_DIRECTORY}/shylock-dominator/assets.cbor.zlib"
+]
+
+orkspace = false
 
 [tasks.yarn]
 workspace = false
@@ -87,4 +96,4 @@ args = [
   "run",
   "build",
 ]
-dependencies = [ "boeupdater-statistics", "boeupdater-export" ]
+dependencies = [ "clean", "boeupdater-export", "boeupdater-statistics" ]

@@ -1,4 +1,5 @@
 use dominator::{class, pseudo};
+use miniz_oxide::inflate::decompress_to_vec;
 use once_cell::sync::{Lazy, OnceCell};
 use rust_decimal::Decimal;
 use shylock_data::provinces::Province;
@@ -157,15 +158,22 @@ pub static NAV_SELECTED_CLASS: Lazy<String> = Lazy::new(|| {
 });
 
 pub(crate) async fn set_global_info() -> Result<(), JsValue> {
-    let hm: HashMap<String, Auction> =
-        ciborium::de::from_reader(include_bytes!("../auctions.cbor").as_slice()).unwrap();
+    let hm: HashMap<String, Auction> = ciborium::de::from_reader(
+        &decompress_to_vec(include_bytes!("../auctions.cbor.zlib")).expect("Failed to decompress!")
+            [..],
+    )
+    .unwrap();
 
     if AUCTIONS.set(hm).is_err() {
         log::error!("Unable to set global auctions");
     }
 
     let assets: Vec<Asset> =
-        ciborium::de::from_reader(include_bytes!("../assets.cbor").as_slice()).unwrap();
+        ciborium::de::from_reader(
+            &decompress_to_vec(include_bytes!("../assets.cbor.zlib"))
+                .expect("Failed to decompress")[..],
+        )
+        .unwrap();
 
     if ASSETS.set(assets).is_err() {
         log::error!("Unable to set global assets");

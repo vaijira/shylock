@@ -65,7 +65,7 @@ impl PropertyMapPage {
                 .style("right", "5px")
                 .after_inserted(clone!(page => move |_| {
                     page.map.init_map(39.61, -3.69);
-                    page.clone().property_list.lock_ref().iter().for_each(|view| {
+                    page.property_list.lock_ref().iter().for_each(|view| {
                         if let Some(coordinates) = view.property.coordinates {
                             let is_opportunity = page.is_opportunity(view);
                             page.map.add_marker(&view.property.auction_id,
@@ -83,15 +83,11 @@ impl PropertyMapPage {
             html!("div", {
                 .style("margin", "5px")
                 .child(html!("p", {
-                    .text("Información subasta:")
+                    .text("Información subasta.")
                 }))
                 .child_signal(page.property_view_present.signal().map(clone!(page => move |present|
                     if present {
-                        if let Some(ref view) = *page.inner_property_view.borrow() {
-                            Some(PropertyView::render_expanded(view.clone()))
-                        } else {
-                            None
-                        }
+                        (*page.inner_property_view.borrow()).as_ref().map(|view| PropertyView::render_expanded(view.clone()))
                     } else {
                         None
                     }
@@ -99,8 +95,4 @@ impl PropertyMapPage {
             }),
         ]
     }
-    /*
-    if let Some(coordinates) = view.property.coordinates {
-        page.map.set_view(coordinates.y(), coordinates.x());
-    }*/
 }
