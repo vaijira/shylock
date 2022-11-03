@@ -232,13 +232,17 @@ impl App {
                 ])
             }),
             html!("p", {
-                .children(&mut[
-                    link!("mailto:contacto@coditia.com", {
-                        .attr("alt", "email contacto")
-                        .text("Escríbeme")
-                    }),
-                 ])
-                 .text(" para cualquier duda o sugerencia.")
+                .text("Para cualquier mejora, duda, sugerencia o error puedes crear un ")
+                .child(
+                    html!("a", {
+                        .attr("href", "https://github.com/vaijira/shylock/issues")
+                        .attr("alt", "informar de problemas o sugerencias")
+                        .attr("target", "_blank")
+                        .attr("rel", "external nofollow")
+                        .text("ticket")
+                    })
+                )
+                .text(".")
             }),
             html!("p",{
                 .text(build_time_local!("Última actualización: %e de %B del %Y"))

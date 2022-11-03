@@ -12,6 +12,7 @@ members = [
 ]
 
 [profile.release]
+panic = 'abort'
 lto = true
 codegen-units = 1
 opt-level = "z"  # 3 => fast, s/z => small

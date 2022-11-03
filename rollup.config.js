@@ -1,10 +1,10 @@
+import nodeResolve from '@rollup/plugin-node-resolve';
 import rust from "@wasm-tool/rollup-plugin-rust";
 import serve from "rollup-plugin-serve";
 import livereload from "rollup-plugin-livereload";
 import { terser } from "rollup-plugin-terser";
 import copy from 'rollup-plugin-copy';
 import commonjs from '@rollup/plugin-commonjs';
-import nodeResolve from '@rollup/plugin-node-resolve';
 
 const is_watch = !!process.env.ROLLUP_WATCH;
 
@@ -18,6 +18,8 @@ export default {
         sourcemap: true,
     },
     plugins: [
+        nodeResolve(),
+
         rust({
             serverPath: "js/",
         }),
@@ -33,9 +35,6 @@ export default {
         }),
 
         commonjs(),
-
-        nodeResolve(),
-
 
         is_watch && serve({
             contentBase: "shylock-dominator/dist",
