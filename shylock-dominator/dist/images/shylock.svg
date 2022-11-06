@@ -44,6 +44,22 @@
   <defs
      id="defs2">
     <linearGradient
+       id="linearGradient2950"
+       inkscape:swatch="solid">
+      <stop
+         style="stop-color:#916f6f;stop-opacity:1;"
+         offset="0"
+         id="stop2948" />
+    </linearGradient>
+    <linearGradient
+       id="linearGradient2894"
+       inkscape:swatch="solid">
+      <stop
+         style="stop-color:#916f6f;stop-opacity:1;"
+         offset="0"
+         id="stop2892" />
+    </linearGradient>
+    <linearGradient
        inkscape:collect="always"
        id="linearGradient3460">
       <stop
@@ -87,35 +103,6 @@
          offset="0"
          id="stop3276" />
     </linearGradient>
-    <meshgradient
-       inkscape:collect="always"
-       id="meshgradient3310"
-       gradientUnits="userSpaceOnUse"
-       x="6.2122478"
-       y="-4.091229">
-      <meshrow
-         id="meshrow3312">
-        <meshpatch
-           id="meshpatch3314">
-          <stop
-             path="c 1.32292,0  2.64583,0  3.96875,0"
-             style="stop-color:#ffffff;stop-opacity:1"
-             id="stop3316" />
-          <stop
-             path="c 0,0.881944  0,1.76389  0,2.64583"
-             style="stop-color:#784421;stop-opacity:1"
-             id="stop3318" />
-          <stop
-             path="c -1.32292,0  -2.64583,0  -3.96875,0"
-             style="stop-color:#ffffff;stop-opacity:1"
-             id="stop3320" />
-          <stop
-             path="c 0,-0.881944  0,-1.76389  0,-2.64583"
-             style="stop-color:#784421;stop-opacity:1"
-             id="stop3322" />
-        </meshpatch>
-      </meshrow>
-    </meshgradient>
     <linearGradient
        inkscape:collect="always"
        xlink:href="#linearGradient3360"
@@ -143,6 +130,15 @@
        x2="6.7468748"
        y2="7.2760415"
        gradientUnits="userSpaceOnUse" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3400"
+       id="linearGradient3237"
+       x1="6.0799565"
+       y1="-2.7683122"
+       x2="10.31329"
+       y2="-2.7683122"
+       gradientUnits="userSpaceOnUse" />
   </defs>
   <g
      inkscape:label="Layer 1"
@@ -156,7 +152,7 @@
        x="92.224136"
        y="84.349022" />
     <rect
-       style="fill:url(#meshgradient3310);stroke:#000000;stroke-width:0.264583;fill-opacity:1"
+       style="fill:url(#linearGradient3237);stroke:#000000;stroke-width:0.264583;fill-opacity:1.0"
        id="rect108"
        width="3.9687502"
        height="2.6458335"

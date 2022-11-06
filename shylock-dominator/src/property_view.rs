@@ -61,10 +61,13 @@ impl PropertyView {
                     .attr("rel", "external nofollow")
                     .text(&view.property.auction_id)
                     .child(render_svg_external_link_icon(DEFAULT_ICON_COLOR, DEFAULT_ICON_SIZE))
-                    .event(clone!(view => move |_: events::MouseEnter| {
+                    .event(clone!(view => move |_: events::PointerEnter| {
                         *view.anchor_hovered.lock_mut() = true;
                     }))
-                    .event(clone!(view => move |_: events::MouseLeave| {
+                    .event(clone!(view => move |_: events::PointerOver| {
+                        *view.anchor_hovered.lock_mut() = true;
+                    }))
+                    .event(clone!(view => move |_: events::PointerLeave| {
                         *view.anchor_hovered.lock_mut() = false;
                     }))
                 }))
@@ -81,10 +84,13 @@ impl PropertyView {
                         .attr("rel", "external nofollow")
                         .text(&view.property.catastro_reference)
                         .child(render_svg_external_link_icon(DEFAULT_ICON_COLOR, DEFAULT_ICON_SIZE))
-                        .event(clone!(view => move |_: events::MouseEnter| {
+                        .event(clone!(view => move |_: events::PointerEnter| {
                             *view.anchor_hovered.lock_mut() = true;
                         }))
-                        .event(clone!(view => move |_: events::MouseLeave| {
+                        .event(clone!(view => move |_: events::PointerOver| {
+                            *view.anchor_hovered.lock_mut() = true;
+                        }))
+                        .event(clone!(view => move |_: events::PointerLeave| {
                             *view.anchor_hovered.lock_mut() = false;
                         }))
                     }))
