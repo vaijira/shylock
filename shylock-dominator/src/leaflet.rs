@@ -64,6 +64,10 @@ export class LeafletMap {
             property.show_property(alt_text);
         });
 
+        marker.on('pointerdown', function(e) {
+            property.show_property(alt_text);
+        });
+
         marker.on('dblclick', function(e) {
             map.setView([lat, lng], 15);
         });

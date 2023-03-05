@@ -1,14 +1,15 @@
-use chrono::{Date, TimeZone, Utc};
+use chrono::NaiveDate;
 use plotters::prelude::*;
 
-fn parse_date(date_str: &str) -> Date<Utc> {
+fn parse_date(date_str: &str) -> NaiveDate {
     let date_split = date_str.split('-');
     let fields = date_split.collect::<Vec<&str>>();
-    Utc.ymd(
+    NaiveDate::from_ymd_opt(
         fields[0].parse::<i32>().unwrap(),
         fields[1].parse::<u32>().unwrap(),
         1,
     )
+    .unwrap()
 }
 
 /// Create a svg histogram with given `data` to a `file_path`.
@@ -35,7 +36,7 @@ pub fn create_svg_histogram(
     chart
         .configure_mesh()
         .disable_x_mesh()
-        .bold_line_style(&WHITE.mix(0.3))
+        .bold_line_style(WHITE.mix(0.3))
         .y_desc("Número de subastas")
         .x_desc("Fecha")
         .axis_desc_style(("arial", 15))

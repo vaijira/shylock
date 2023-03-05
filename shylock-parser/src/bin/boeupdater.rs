@@ -107,7 +107,7 @@ async fn export_ongoing_auctions(db_client: &DbClient) -> Result<(), Box<dyn std
 
     stream::iter(properties.iter_mut())
         .for_each_concurrent(DEFAULT_CONCURRENCY, |property| async move {
-            if property.catastro_link == None
+            if property.catastro_link.is_none()
                 && valid_catastro_reference(&property.catastro_reference)
             {
                 match geosolver
@@ -122,7 +122,7 @@ async fn export_ongoing_auctions(db_client: &DbClient) -> Result<(), Box<dyn std
                     ),
                 }
             }
-            if property.coordinates == None {
+            if property.coordinates.is_none() {
                 property.coordinates = match geosolver
                     .resolve(
                         &property.address,

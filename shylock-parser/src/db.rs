@@ -70,7 +70,7 @@ impl DbClient {
         .bind(&other.additional_information)
         .bind(&auction.id)
         .bind(other.bidinfo.as_ref().map(|bidinfo| bidinfo.to_string()))
-        .bind(&other.category)
+        .bind(other.category)
         .bind(&other.charges.to_string())
         .bind(&other.description)
         .bind(&other.judicial_title)
@@ -97,14 +97,14 @@ impl DbClient {
         .bind(&auction.id)
         .bind(property.bidinfo.as_ref().map(|bidinfo| bidinfo.to_string()))
         .bind(&property.catastro_reference)
-        .bind(&property.category)
+        .bind(property.category)
         .bind(&property.charges.to_string())
         .bind(&property.city)
         .bind(&property.description)
         .bind(&property.owner_status)
         .bind(&property.postal_code)
         .bind(&property.primary_residence)
-        .bind(&property.province)
+        .bind(property.province)
         .bind(&property.register_inscription)
         .bind(&property.visitable)
         .execute(&self.pool)
@@ -127,11 +127,11 @@ impl DbClient {
         .bind(&auction.id)
         .bind(vehicle.bidinfo.as_ref().map(|bidinfo| bidinfo.to_string()))
         .bind(&vehicle.brand)
-        .bind(&vehicle.category)
+        .bind(vehicle.category)
         .bind(&vehicle.charges.to_string())
         .bind(&vehicle.description)
         .bind(&vehicle.frame_number)
-        .bind(&vehicle.licensed_date)
+        .bind(vehicle.licensed_date)
         .bind(&vehicle.license_plate)
         .bind(&vehicle.localization)
         .bind(&vehicle.model)
@@ -163,15 +163,15 @@ impl DbClient {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"#,
         )
         .bind(&auction.id)
-        .bind(&auction.auction_state)
+        .bind(auction.auction_state)
         .bind(&auction.kind)
         .bind(&auction.claim_quantity.to_string())
-        .bind(&auction.lots)
+        .bind(auction.lots)
         .bind(&auction.lot_kind)
         .bind(&auction.management.code)
         .bind(&auction.bidinfo.to_string())
-        .bind(&auction.start_date)
-        .bind(&auction.end_date)
+        .bind(auction.start_date)
+        .bind(auction.end_date)
         .bind(&auction.notice)
         .execute(&self.pool)
         .await
@@ -207,7 +207,7 @@ impl DbClient {
     /// Check if a auction with `id` is already in db.
     pub async fn auction_exists(&self, id: &str) -> Result<bool, Box<dyn std::error::Error>> {
         match sqlx::query(r#"SELECT id FROM auctions WHERE id = ?"#)
-            .bind(&id)
+            .bind(id)
             .fetch_optional(&self.pool)
             .await
         {
@@ -284,7 +284,7 @@ impl DbClient {
         id: &str,
     ) -> Result<Management, Box<dyn std::error::Error>> {
         match sqlx::query(r#"SELECT * FROM managements WHERE code = ?"#)
-            .bind(&id)
+            .bind(id)
             .map(|row: SqliteRow| Management {
                 code: row.get("code"),
                 description: row.get("description"),
