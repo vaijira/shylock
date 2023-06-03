@@ -286,6 +286,7 @@ impl FromStr for AuctionState {
         let s: String = s
             .to_uppercase()
             .replace(' ', "")
+            .replace('-', "")
             .chars()
             .map(|x| match x {
                 'Á' => 'A',
