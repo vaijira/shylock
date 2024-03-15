@@ -87,13 +87,11 @@ args = [
   "${CARGO_MAKE_WORKING_DIRECTORY}/shylock-dominator/assets.cbor.zlib"
 ]
 
-orkspace = false
-
 [tasks.yarn]
 workspace = false
-command = "yarn"
+command = "yarnpkg"
 args = [
   "run",
   "build",
 ]
-dependencies = [ "clean", "boeupdater-export", "boeupdater-statistics" ]
+#dependencies = [ "clean", "boeupdater-export", "boeupdater-statistics" ]
