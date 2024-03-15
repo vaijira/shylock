@@ -89,9 +89,9 @@ args = [
 
 [tasks.yarn]
 workspace = false
-command = "yarnpkg"
+command = "yarn"
 args = [
   "run",
   "build",
 ]
-#dependencies = [ "clean", "boeupdater-export", "boeupdater-statistics" ]
+dependencies = [ "clean", "boeupdater-export", "boeupdater-statistics" ]
