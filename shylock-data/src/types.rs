@@ -285,8 +285,7 @@ impl FromStr for AuctionState {
     fn from_str(s: &str) -> Result<Self, ()> {
         let s: String = s
             .to_uppercase()
-            .replace(' ', "")
-            .replace('-', "")
+            .replace([' ', '-'], "")
             .chars()
             .map(|x| match x {
                 'Á' => 'A',
