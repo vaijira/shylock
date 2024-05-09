@@ -22,6 +22,7 @@ use wasm_bindgen::prelude::*;
 
 mod app;
 mod feather;
+mod footer;
 mod global;
 mod leaflet;
 mod other_asset_page;
