@@ -144,6 +144,13 @@ impl PropertyView {
                 .text(&format_valuation(&view.bidinfo.appraisal))
                 .text(" €.")
             }))
+            .child(html!("span", {
+                .class(&*CELL_FLEX_ITEM_CLASS)
+                .text("Tramon entre pujas: ")
+                .text(&format_valuation(&view.bidinfo.bid_step))
+                .text(" €.")
+            }))
+
         })
     }
 

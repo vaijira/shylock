@@ -44,6 +44,7 @@ pub struct PropertyPage {
     province_sorting: Mutable<SortingOrder>,
     value_sorting: Mutable<SortingOrder>,
     sorting: Mutable<PropertySorting>,
+    bid_step_filter: Mutable<f64>,
 }
 
 impl PropertyPage {
@@ -58,6 +59,7 @@ impl PropertyPage {
             province_sorting: Mutable::new(SortingOrder::None),
             value_sorting: Mutable::new(SortingOrder::None),
             sorting: Mutable::new(PropertySorting::None),
+            bid_step_filter: Mutable::new(0.0),
         })
     }
 
@@ -105,12 +107,23 @@ impl PropertyPage {
             && target_value > property_view.bidinfo.claim_quantity.to_f64().unwrap_or(0.0)
     }
 
+    fn filter_by_bid_step(&self, property_view: &Arc<PropertyView>) -> bool {
+        if *self.bid_step_filter.lock_ref() <= 0.0 {
+            return true;
+        }
+
+        let bid_step = *self.bid_step_filter.lock_ref();
+
+        property_view.bidinfo.bid_step.to_f64().unwrap_or(0.0) > bid_step
+    }
+
     fn filter(&self) {
         for property_view in self.property_list.lock_ref().iter() {
             property_view.filtered_in.set_neq(
                 self.filter_by_province(property_view)
                     && self.filter_by_city(property_view)
-                    && self.filter_by_opportunity(property_view),
+                    && self.filter_by_opportunity(property_view)
+                    && self.filter_by_bid_step(property_view),
             );
         }
     }
@@ -234,6 +247,31 @@ impl PropertyPage {
                      }))
                 })
             }),
+            html!("label", {
+                .visible(true)
+                .attr("for", "select-tramo-puja")
+                .text_signal(page.bid_step_filter.signal()
+                    .map(move |bid_step|
+                        format!("Tramo mínimo entre pujas ({} €)", bid_step)
+                    )
+                )
+            }),
+            html!("input" => HtmlInputElement, {
+                .attr("id", "select-tramo")
+                .attr("alt", "Filtrado por tramo entre pujas")
+                .attr("type", "range")
+                .attr("min", "0")
+                .attr("max", "50000")
+                .attr("step", "100")
+                .attr("value", "0")
+                .with_node!(input => {
+                    .event(clone!(page => move |_: events::Change| {
+                        *page.bid_step_filter.lock_mut() = input.value_as_number();
+                        page.filter();
+                     }))
+                })
+            }),
+
             ])
         })
     }
