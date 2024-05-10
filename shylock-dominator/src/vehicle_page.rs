@@ -34,6 +34,7 @@ pub struct VehiclePage {
     vehicle_list: MutableVec<Arc<VehicleView>>,
     brand_options: MutableVec<&'static str>,
     brand_filter: Mutable<&'static str>,
+    bid_step_filter: Mutable<bool>,
     opportunity_filter: Mutable<bool>,
     opportunity_filter_threshold: Mutable<f64>,
     model_options: MutableVec<&'static str>,
@@ -48,6 +49,7 @@ impl VehiclePage {
             vehicle_list,
             brand_options: MutableVec::new(),
             brand_filter: Mutable::new(ALL_BRAND_STR),
+            bid_step_filter: Mutable::new(false),
             opportunity_filter: Mutable::new(true),
             opportunity_filter_threshold: Mutable::new(DEFAULT_OPPORTUNITY_VALUE),
             model_options: MutableVec::new(),
@@ -86,12 +88,21 @@ impl VehiclePage {
             && target_value > vehicle_view.bidinfo.claim_quantity.to_f64().unwrap_or(0.0)
     }
 
+    fn filter_by_bid_step(&self, vehicle_view: &Arc<VehicleView>) -> bool {
+        if !*self.bid_step_filter.lock_ref() {
+            return true;
+        }
+
+        vehicle_view.bidinfo.bid_step.to_f64().unwrap_or(0.0) <= 0.0
+    }
+
     fn filter(&self) {
         for vehicle_view in self.vehicle_list.lock_ref().iter() {
             vehicle_view.filtered_in.set_neq(
                 self.filter_by_brand(vehicle_view)
                     && self.filter_by_model(vehicle_view)
-                    && self.filter_by_opportunity(vehicle_view),
+                    && self.filter_by_opportunity(vehicle_view)
+                    && self.filter_by_bid_step(vehicle_view),
             );
         }
     }
@@ -241,6 +252,24 @@ impl VehiclePage {
                         let model = lock.iter().find(|c|  **c == select.value()).unwrap();
                         *page.model_filter.lock_mut() = model;
                          page.filter();
+                     }))
+                })
+            }),
+            html!("label", {
+                .visible(true)
+                .attr("for", "checkbox-sin-tramos")
+                .text("Sin tramos entre pujas:")
+            }),
+            html!("input" => HtmlInputElement, {
+                .attr("id", "checkbox-sin-tramos")
+                .attr("alt", "Sin tramos entre pujas")
+                .attr("type", "checkbox")
+                .with_node!(_input => {
+                    .event(clone!(page => move |_: events::Change| {
+                        let value = *page.bid_step_filter.lock_ref();
+                        *page.bid_step_filter.lock_mut() = !value;
+
+                        page.filter();
                      }))
                 })
             }),

@@ -1,8 +1,8 @@
-use std::sync::Arc;
-
 use dominator::{clone, events, html, Dom};
 use futures_signals::signal::{Mutable, SignalExt};
+use rust_decimal::prelude::ToPrimitive;
 use shylock_data::{BidInfo, Vehicle};
+use std::sync::Arc;
 
 use crate::{
     feather::render_svg_external_link_icon,
@@ -114,6 +114,25 @@ impl VehicleView {
                     .text(&format_valuation(&bidinfo.appraisal))
                     .text(" €.")
                 }))
+                .child(html!("span", {
+                  .class(&*CELL_FLEX_ITEM_CLASS)
+                  .text("Tramos entre pujas: ")
+                  .text(
+                        &if view.bidinfo.bid_step.to_f64().unwrap_or(0.0) > 0.0 {
+                          format_valuation(&view.bidinfo.bid_step)
+                        } else {
+                          "Sin tramos".to_string()
+                        }
+                  )
+                  .text(
+                        if view.bidinfo.bid_step.to_f64().unwrap_or(0.0) > 0.0 {
+                          " €."
+                        } else {
+                          "."
+                        }
+                  )
+            }))
+
             }))
         })
     }
