@@ -28,7 +28,7 @@ pub async fn process_auction_link(
     let asset_page = url_fetcher.get_url(&asset_link).await?;
     match auction.lot_kind {
         LotAuctionKind::NotApplicable => {
-            log::info!("Visiting auction without lots link");
+            log::info!("Parsing auction without lots link");
             let asset = Asset::new(&auction.id, &parse_asset_auction_page(&asset_page)?);
 
             assets.push(asset);
