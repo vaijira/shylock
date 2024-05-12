@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS properties (
     visitable TEXT NULL
 );
 
-CREATE UNIQUE INDEX idx_properties_on_auction_id ON properties(auction_id);
+CREATE INDEX idx_properties_on_auction_id ON properties(auction_id);
 
 CREATE TABLE IF NOT EXISTS vehicles (
     -- foreign key to auctions table
@@ -103,7 +103,7 @@ CREATE TABLE IF NOT EXISTS vehicles (
     visitable TEXT NULL
 );
 
-CREATE UNIQUE INDEX idx_vehicles_on_auction_id ON vehicles(auction_id);
+CREATE INDEX idx_vehicles_on_auction_id ON vehicles(auction_id);
 
 CREATE TABLE IF NOT EXISTS others (
     additional_information TEXT NULL,
@@ -124,4 +124,4 @@ CREATE TABLE IF NOT EXISTS others (
     visitable TEXT NULL
 );
 
-CREATE UNIQUE INDEX idx_others_on_auction_id ON others(auction_id);
+CREATE INDEX idx_others_on_auction_id ON others(auction_id);

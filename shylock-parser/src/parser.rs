@@ -37,7 +37,10 @@ fn parse_html_table(
             .text()
             .collect::<String>();
 
-        result.insert(th.trim().parse::<BoeConcept>()?, td.trim().to_owned());
+        result.insert(
+            th.trim().to_uppercase().parse::<BoeConcept>()?,
+            td.trim().to_owned(),
+        );
     }
 
     Ok(result)

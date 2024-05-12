@@ -8,7 +8,8 @@ use shylock_data::AuctionState;
 /// Default country to solve geographic information.
 pub const DEFAULT_COUNTRY: &str = "Spain";
 
-async fn process_auction_link(
+/// Retrieve an auction information from an auction link.
+pub async fn process_auction_link(
     url_fetcher: &UrlFetcher,
     link: &(String, AuctionState),
 ) -> Result<(Auction, Vec<Asset>), Box<dyn std::error::Error>> {
@@ -27,6 +28,7 @@ async fn process_auction_link(
     let asset_page = url_fetcher.get_url(&asset_link).await?;
     match auction.lot_kind {
         LotAuctionKind::NotApplicable => {
+            log::info!("Visiting auction without lots link");
             let asset = Asset::new(&auction.id, &parse_asset_auction_page(&asset_page)?);
 
             assets.push(asset);
@@ -34,6 +36,7 @@ async fn process_auction_link(
         LotAuctionKind::Joined | LotAuctionKind::Splitted => {
             let lot_links = parse_lot_auction_page_links(&asset_page)?;
             for lot_link in lot_links.iter() {
+                log::info!("Visiting lot auction link: {}", lot_link);
                 let lot_page = url_fetcher.get_url(lot_link).await?;
 
                 let lot_id = extract_auction_lot_number_from_link(lot_link)?;

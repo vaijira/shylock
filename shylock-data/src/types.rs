@@ -91,7 +91,7 @@ fn get_lot_auction_kind(data: &HashMap<BoeConcept, String>) -> LotAuctionKind {
     let mut result: LotAuctionKind = LotAuctionKind::NotApplicable;
 
     if let Some(auction_kind) = data.get(&BoeConcept::LotAuctionKind) {
-        result = match &auction_kind[..] {
+        result = match &auction_kind.to_uppercase()[..] {
             "CONJUNTA PARA TODOS LOS LOTES" => LotAuctionKind::Joined,
             "SEPARADA PARA CADA LOTE" => LotAuctionKind::Splitted,
             _ => LotAuctionKind::NotApplicable,
