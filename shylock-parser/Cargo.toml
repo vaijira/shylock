@@ -19,10 +19,10 @@ plotters = "0.3"
 proj = { version = "0.27", features = ["geo-types"] }
 radix_trie = "0.1.6"
 regex = "1.4"
-reqwest = { version = "0.11", features = ["blocking", "cookies", "gzip", "json"] }
-reqwest-middleware = "0.1"
-reqwest-retry = "0.1"
-reqwest-tracing = "0.2"
+reqwest = { version = "0.12", features = ["blocking", "cookies", "gzip", "json"] }
+reqwest-middleware = "0.3"
+reqwest-retry = "0.5"
+reqwest-tracing = "0.5"
 rmp-serde = "1.1"
 rust_decimal = "1.26"
 scraper = "0.13"

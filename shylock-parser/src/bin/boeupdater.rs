@@ -7,7 +7,7 @@ use shylock_data::types::{Asset, Auction};
 use shylock_parser::{
     db::{DbClient, DEFAULT_DB_PATH},
     geosolver::GeoSolver,
-    http::{UrlFetcher, MAIN_ALL_AUCTIONS_BOE_URL},
+    http::{UrlFetcher, MAIN_ALL_AUCTIONS_BOE_PARAMS, MAIN_ALL_AUCTIONS_BOE_POST_URL},
     image::create_svg_histogram,
     scraper::{auction_state_page_scraper, page_scraper, DEFAULT_COUNTRY},
     util::{dump_to_cbor_compressed_file, valid_catastro_reference},
@@ -18,10 +18,17 @@ const DEFAULT_CONCURRENCY: usize = 6;
 
 async fn init_scrape(db_client: &DbClient) -> Result<(), Box<dyn std::error::Error>> {
     let http_client = &UrlFetcher::new();
-    let main_page = http_client.get_url(&MAIN_ALL_AUCTIONS_BOE_URL).await?;
+    log::info!("Visiting: {}", *MAIN_ALL_AUCTIONS_BOE_POST_URL);
+    let main_page = http_client
+        .post_url(
+            &MAIN_ALL_AUCTIONS_BOE_POST_URL,
+            MAIN_ALL_AUCTIONS_BOE_PARAMS,
+        )
+        .await?;
+    log::info!("Content: {}", main_page);
     let mut pages_url = shylock_parser::parser::parse_extra_pages(&main_page);
 
-    pages_url.insert(0, MAIN_ALL_AUCTIONS_BOE_URL.to_string());
+    pages_url.insert(0, MAIN_ALL_AUCTIONS_BOE_POST_URL.to_string());
     log::info!("Total BOE pages to process: {}", pages_url.len());
 
     let stream = stream::iter(pages_url.iter().enumerate());
@@ -60,10 +67,15 @@ async fn update_scrape(db_client: &DbClient) -> Result<(), Box<dyn std::error::E
         "Total BOE ongoing auctions to check for current state: {}",
         auction_ids.len()
     );
-    let main_page = http_client.get_url(&MAIN_ALL_AUCTIONS_BOE_URL).await?;
+    let main_page = http_client
+        .post_url(
+            &MAIN_ALL_AUCTIONS_BOE_POST_URL,
+            MAIN_ALL_AUCTIONS_BOE_PARAMS,
+        )
+        .await?;
     let mut pages_url = shylock_parser::parser::parse_extra_pages(&main_page);
 
-    pages_url.insert(0, MAIN_ALL_AUCTIONS_BOE_URL.to_string());
+    pages_url.insert(0, MAIN_ALL_AUCTIONS_BOE_POST_URL.to_string());
     log::info!("Total BOE pages to process: {}", pages_url.len());
 
     let stream = stream::iter(pages_url.iter().enumerate());
